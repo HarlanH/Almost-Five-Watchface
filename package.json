@@ -35,7 +35,8 @@
       "KEY_OFFSET": 5,
       "KEY_BOLD_TEXT": 3,
       "KEY_GESTURE": 7,
-      "KEY_BT_NOTIFICATION": 8
+      "KEY_BT_NOTIFICATION": 8,
+      "KEY_MEETING_STATUS": 9
     },
     "enableMultiJS": false,
     "displayName": "Fuzzy Text Watch Star",

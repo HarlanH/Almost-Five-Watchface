@@ -5,7 +5,11 @@ const {
   buildConfigUrl,
   configDataToDict,
   hasColorPlatform,
-  hexColorToARGB2222
+  hexColorToARGB2222,
+  parseIcsEvents,
+  computeMeetingStatus,
+  normalizeCalendarUrl,
+  getCalendarUrls
 } = require('../../src/js/pebble-js-app');
 
 test('buildConfigUrl returns embedded data URL', () => {
@@ -48,4 +52,65 @@ test('configDataToDict maps app settings keys', () => {
   assert.equal(dict.KEY_MESSAGE_TIME, 3);
   assert.equal(dict.KEY_GESTURE, 4);
   assert.equal(dict.KEY_BT_NOTIFICATION, 2);
+});
+
+test('parseIcsEvents ignores transparent and free events', () => {
+  const ics = [
+    'BEGIN:VCALENDAR',
+    'BEGIN:VEVENT',
+    'DTSTART:20260428T160000Z',
+    'DTEND:20260428T170000Z',
+    'TRANSP:TRANSPARENT',
+    'END:VEVENT',
+    'BEGIN:VEVENT',
+    'DTSTART:20260428T180000Z',
+    'DTEND:20260428T190000Z',
+    'X-MICROSOFT-CDO-BUSYSTATUS:FREE',
+    'END:VEVENT',
+    'BEGIN:VEVENT',
+    'DTSTART:20260428T200000Z',
+    'DTEND:20260428T210000Z',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].join('\r\n');
+
+  const events = parseIcsEvents(ics);
+  assert.equal(events.length, 1);
+  assert.equal(events[0].start.getTime(), Date.UTC(2026, 3, 28, 20, 0, 0));
+});
+
+test('computeMeetingStatus returns NOW when in-progress busy event exists', () => {
+  var now = new Date(Date.UTC(2026, 3, 28, 20, 5, 0));
+  var events = [
+    { start: new Date(Date.UTC(2026, 3, 28, 20, 0, 0)), end: new Date(Date.UTC(2026, 3, 28, 20, 30, 0)) }
+  ];
+  assert.equal(computeMeetingStatus(events, now, 10), 2);
+});
+
+test('computeMeetingStatus returns SOON for next busy event within 10 minutes', () => {
+  var now = new Date(Date.UTC(2026, 3, 28, 19, 52, 0));
+  var events = [
+    { start: new Date(Date.UTC(2026, 3, 28, 20, 0, 0)), end: new Date(Date.UTC(2026, 3, 28, 20, 30, 0)) }
+  ];
+  assert.equal(computeMeetingStatus(events, now, 10), 1);
+});
+
+test('normalizeCalendarUrl converts webcal scheme to https', () => {
+  assert.equal(
+    normalizeCalendarUrl('webcal://calendar.google.com/calendar/ical/foo/basic.ics'),
+    'https://calendar.google.com/calendar/ical/foo/basic.ics'
+  );
+});
+
+test('getCalendarUrls returns up to three normalized calendar URLs', () => {
+  const urls = getCalendarUrls({
+    calendar_ics_1: ' webcal://calendar.google.com/calendar/ical/one/basic.ics ',
+    calendar_ics_2: '',
+    calendar_ics_3: 'https://calendar.google.com/calendar/ical/three/basic.ics'
+  });
+
+  assert.deepEqual(urls, [
+    'https://calendar.google.com/calendar/ical/one/basic.ics',
+    'https://calendar.google.com/calendar/ical/three/basic.ics'
+  ]);
 });

@@ -11,6 +11,7 @@
 #define KEY_MESSAGE_TIME 6
 #define KEY_GESTURE 7
 #define KEY_BT_NOTIFICATION 8
+#define KEY_MEETING_STATUS 9
 
 // Max number of characters in a line
 #define LINE_LENGTH 9
@@ -63,6 +64,10 @@
 #define BT_NOTIFY_OFF      0
 #define BT_NOTIFY_NO_VIBE  1
 #define BT_NOTIFY_ON       2
+
+#define MEETING_STATUS_NONE 0
+#define MEETING_STATUS_SOON 1
+#define MEETING_STATUS_NOW  2
 
 
 // Data structures

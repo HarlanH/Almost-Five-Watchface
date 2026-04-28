@@ -1,7 +1,15 @@
 // Watchface config version
 var version = 42;
+var SETTINGS_STORAGE_KEY = 'fuzzy_text_plus_settings';
+var CALENDAR_POLL_INTERVAL_MS = 300000;
+var MEETING_STATUS_NONE = 0;
+var MEETING_STATUS_SOON = 1;
+var MEETING_STATUS_NOW = 2;
+var lastMeetingStatus = null;
+var meetingTimer = null;
 
-function buildConfigUrl(hasColorScreen) {
+function buildConfigUrl(hasColorScreen, initialSettings) {
+  var initialSettingsJson = JSON.stringify(initialSettings || {});
   var html = "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>" +
     "<title>Fuzzy Text Plus Settings</title>" +
     "<style>body{font-family:Helvetica,Arial,sans-serif;padding:16px;background:#f6f7f8;color:#1f2328}h3{margin-top:0}" +
@@ -27,11 +35,18 @@ function buildConfigUrl(hasColorScreen) {
     "<option value='0'>Off</option><option value='2'>Flick wrist</option><option value='3'>Shake up/down</option><option value='1'>Boxing move</option><option value='4'>Any shake</option></select></div>" +
     "<div class='row'><label>Connection lost</label><select id='bt'>" +
     "<option value='0'>Off</option><option value='1'>Message only</option><option value='2'>Buzz and message</option></select></div>" +
+    "<div class='row'><label>Google Calendar iCal URL 1</label><input id='calendar_ics_1' type='text' placeholder='https://.../basic.ics'></div>" +
+    "<div class='row'><label>Google Calendar iCal URL 2</label><input id='calendar_ics_2' type='text' placeholder='https://.../basic.ics'></div>" +
+    "<div class='row'><label>Google Calendar iCal URL 3</label><input id='calendar_ics_3' type='text' placeholder='https://.../basic.ics'></div>" +
+    "<button id='test_fetch' type='button' style='background:#5f6368;margin-top:8px'>Test calendar fetch</button>" +
+    "<p id='test_result' class='muted'></p>" +
     "<button id='save'>Save</button><p class='muted'>Version: " + version + "</p>" +
     "<script>(function(){var hasColor=" + (hasColorScreen ? "true" : "false") + ";" +
-    "var defaults={inverse_colors:false,background_color:'0x000000',regular_color:'0xFFFFFF',bold_color:'0xFFFFFF',language:'2',offset:'180',message_time:'3',gesture:'4',bt_notification:'2'};" +
-    "function load(){try{var raw=localStorage.getItem('fuzzy_text_plus_settings');if(raw){return Object.assign({},defaults,JSON.parse(raw));}}catch(e){}return defaults;}" +
-    "function save(v){try{localStorage.setItem('fuzzy_text_plus_settings',JSON.stringify(v));}catch(e){}}" +
+    "var initialSettings=" + initialSettingsJson + ";" +
+    "var defaults={inverse_colors:false,background_color:'0x000000',regular_color:'0xFFFFFF',bold_color:'0xFFFFFF',language:'2',offset:'180',message_time:'3',gesture:'4',bt_notification:'2',calendar_ics_1:'',calendar_ics_2:'',calendar_ics_3:''};" +
+    "function normUrl(url){var trimmed=String(url||'').trim();if(trimmed.indexOf('webcal://')===0){return 'https://'+trimmed.substring('webcal://'.length);}return trimmed;}" +
+    "function load(){try{var raw=localStorage.getItem('" + SETTINGS_STORAGE_KEY + "');if(raw){return Object.assign({},defaults,initialSettings,JSON.parse(raw));}}catch(e){}return Object.assign({},defaults,initialSettings);}" +
+    "function save(v){try{localStorage.setItem('" + SETTINGS_STORAGE_KEY + "',JSON.stringify(v));}catch(e){}}" +
     "var state=load();" +
     "if(hasColor){document.getElementById('colorRows').classList.remove('hidden');}else{document.getElementById('bwRow').classList.remove('hidden');}" +
     "document.getElementById('inverse').checked=!!state.inverse_colors;" +
@@ -43,7 +58,11 @@ function buildConfigUrl(hasColorScreen) {
     "document.getElementById('message_time').value=String(state.message_time||'3');" +
     "document.getElementById('gesture').value=String(state.gesture||'4');" +
     "document.getElementById('bt').value=String(state.bt_notification||'2');" +
-    "document.getElementById('save').addEventListener('click',function(){var out={inverse_colors:document.getElementById('inverse').checked,background_color:document.getElementById('background').value,regular_color:document.getElementById('regular').value,bold_color:document.getElementById('bold').value,language:document.getElementById('language').value,offset:document.getElementById('offset').value,message_time:document.getElementById('message_time').value,gesture:document.getElementById('gesture').value,bt_notification:document.getElementById('bt').value};save(out);document.location='pebblejs://close#'+encodeURIComponent(JSON.stringify(out));});})();</script>" +
+    "document.getElementById('calendar_ics_1').value=String(state.calendar_ics_1||state.calendar_ics||'');" +
+    "document.getElementById('calendar_ics_2').value=String(state.calendar_ics_2||'');" +
+    "document.getElementById('calendar_ics_3').value=String(state.calendar_ics_3||'');" +
+    "document.getElementById('test_fetch').addEventListener('click',function(){var out={inverse_colors:document.getElementById('inverse').checked,background_color:document.getElementById('background').value,regular_color:document.getElementById('regular').value,bold_color:document.getElementById('bold').value,language:document.getElementById('language').value,offset:document.getElementById('offset').value,message_time:document.getElementById('message_time').value,gesture:document.getElementById('gesture').value,bt_notification:document.getElementById('bt').value,calendar_ics_1:normUrl(document.getElementById('calendar_ics_1').value),calendar_ics_2:normUrl(document.getElementById('calendar_ics_2').value),calendar_ics_3:normUrl(document.getElementById('calendar_ics_3').value),test_fetch:'1'};save(out);document.location='pebblejs://close#'+encodeURIComponent(JSON.stringify(out));});" +
+    "document.getElementById('save').addEventListener('click',function(){var out={inverse_colors:document.getElementById('inverse').checked,background_color:document.getElementById('background').value,regular_color:document.getElementById('regular').value,bold_color:document.getElementById('bold').value,language:document.getElementById('language').value,offset:document.getElementById('offset').value,message_time:document.getElementById('message_time').value,gesture:document.getElementById('gesture').value,bt_notification:document.getElementById('bt').value,calendar_ics_1:normUrl(document.getElementById('calendar_ics_1').value),calendar_ics_2:normUrl(document.getElementById('calendar_ics_2').value),calendar_ics_3:normUrl(document.getElementById('calendar_ics_3').value)};save(out);document.location='pebblejs://close#'+encodeURIComponent(JSON.stringify(out));});})();</script>" +
     "</body></html>";
 
   return 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
@@ -112,13 +131,306 @@ function hasColor() {
   return false;
 }
 
+function loadStoredSettings() {
+  var defaults = {
+    calendar_ics_1: '',
+    calendar_ics_2: '',
+    calendar_ics_3: ''
+  };
+
+  try {
+    var raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (raw) {
+      return Object.assign({}, defaults, JSON.parse(raw));
+    }
+  } catch (err) {
+    console.log('Failed to read settings: ' + err);
+  }
+
+  return defaults;
+}
+
+function saveStoredSettings(settings) {
+  try {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(settings));
+  } catch (err) {
+    console.log('Failed to save settings: ' + err);
+  }
+}
+
+function normalizeCalendarUrl(url) {
+  var trimmed = (url || '').trim();
+  if (trimmed.indexOf('webcal://') === 0) {
+    return 'https://' + trimmed.substring('webcal://'.length);
+  }
+  return trimmed;
+}
+
+function getCalendarUrls(settings) {
+  var urls = [];
+  var candidates = [
+    settings.calendar_ics_1 || settings.calendar_ics || '',
+    settings.calendar_ics_2 || '',
+    settings.calendar_ics_3 || ''
+  ];
+  for (var i = 0; i < candidates.length; i++) {
+    var normalized = normalizeCalendarUrl(candidates[i]);
+    if (normalized) {
+      urls.push(normalized);
+    }
+  }
+  return urls;
+}
+
+function parseIcsDate(value) {
+  if (!value) {
+    return null;
+  }
+
+  var utc = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(value);
+  if (utc) {
+    return new Date(Date.UTC(
+      parseInt(utc[1], 10),
+      parseInt(utc[2], 10) - 1,
+      parseInt(utc[3], 10),
+      parseInt(utc[4], 10),
+      parseInt(utc[5], 10),
+      parseInt(utc[6], 10)
+    ));
+  }
+
+  return null;
+}
+
+function unfoldIcsLines(icsText) {
+  var lines = icsText.split(/\r?\n/);
+  var unfolded = [];
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if ((line.charAt(0) === ' ' || line.charAt(0) === '\t') && unfolded.length > 0) {
+      unfolded[unfolded.length - 1] += line.substring(1);
+    } else {
+      unfolded.push(line);
+    }
+  }
+  return unfolded;
+}
+
+function isBusyEvent(event) {
+  var transp = event.transp || '';
+  if (transp.toUpperCase() === 'TRANSPARENT') {
+    return false;
+  }
+
+  var busyStatus = event.busyStatus || '';
+  if (busyStatus.toUpperCase() === 'FREE') {
+    return false;
+  }
+
+  return true;
+}
+
+function parseIcsEvents(icsText) {
+  if (!icsText) {
+    return [];
+  }
+
+  var lines = unfoldIcsLines(icsText);
+  var events = [];
+  var event = null;
+
+  for (var i = 0; i < lines.length; i++) {
+    var line = lines[i];
+    if (line === 'BEGIN:VEVENT') {
+      event = {};
+      continue;
+    }
+    if (line === 'END:VEVENT') {
+      if (event && event.start && event.end && isBusyEvent(event)) {
+        events.push({
+          start: event.start,
+          end: event.end
+        });
+      }
+      event = null;
+      continue;
+    }
+    if (!event) {
+      continue;
+    }
+
+    var dtStart = /^DTSTART(?:;[^:]*)?:(.+)$/.exec(line);
+    if (dtStart) {
+      event.start = parseIcsDate(dtStart[1]);
+      continue;
+    }
+
+    var dtEnd = /^DTEND(?:;[^:]*)?:(.+)$/.exec(line);
+    if (dtEnd) {
+      event.end = parseIcsDate(dtEnd[1]);
+      continue;
+    }
+
+    var transp = /^TRANSP:(.+)$/.exec(line);
+    if (transp) {
+      event.transp = transp[1];
+      continue;
+    }
+
+    var busyStatus = /^X-MICROSOFT-CDO-BUSYSTATUS:(.+)$/.exec(line);
+    if (busyStatus) {
+      event.busyStatus = busyStatus[1];
+    }
+  }
+
+  return events;
+}
+
+function computeMeetingStatus(events, now, soonMinutes) {
+  var nowMs = now.getTime();
+  var soonMs = soonMinutes * 60 * 1000;
+
+  for (var i = 0; i < events.length; i++) {
+    var startMs = events[i].start.getTime();
+    var endMs = events[i].end.getTime();
+    if (nowMs >= startMs && nowMs < endMs) {
+      return MEETING_STATUS_NOW;
+    }
+  }
+
+  var closestStartMs = null;
+  for (var j = 0; j < events.length; j++) {
+    var candidateMs = events[j].start.getTime();
+    if (candidateMs > nowMs && (closestStartMs === null || candidateMs < closestStartMs)) {
+      closestStartMs = candidateMs;
+    }
+  }
+
+  if (closestStartMs !== null && closestStartMs - nowMs <= soonMs) {
+    return MEETING_STATUS_SOON;
+  }
+
+  return MEETING_STATUS_NONE;
+}
+
+function sendMeetingStatus(status) {
+  if (lastMeetingStatus === status) {
+    return;
+  }
+
+  var dict = { KEY_MEETING_STATUS: status };
+  Pebble.sendAppMessage(dict, function() {
+    lastMeetingStatus = status;
+  }, function(err) {
+    console.log('Meeting status send failed: ' + JSON.stringify(err));
+  });
+}
+
+function refreshMeetingStatus() {
+  var settings = loadStoredSettings();
+  var icsUrls = getCalendarUrls(settings);
+
+  if (icsUrls.length === 0) {
+    sendMeetingStatus(MEETING_STATUS_NONE);
+    return;
+  }
+
+  var pending = icsUrls.length;
+  var combinedEvents = [];
+
+  function handleDone() {
+    pending--;
+    if (pending > 0) {
+      return;
+    }
+    var status = computeMeetingStatus(combinedEvents, new Date(), 10);
+    sendMeetingStatus(status);
+  }
+
+  for (var i = 0; i < icsUrls.length; i++) {
+    (function(url) {
+      var req = new XMLHttpRequest();
+      req.onload = function() {
+        if (req.status >= 200 && req.status < 300) {
+          combinedEvents = combinedEvents.concat(parseIcsEvents(req.responseText));
+        } else {
+          console.log('ICS request failed with status ' + req.status + ' for ' + url);
+        }
+        handleDone();
+      };
+      req.onerror = function() {
+        console.log('ICS request network error for ' + url);
+        handleDone();
+      };
+      req.open('GET', url, true);
+      req.send();
+    })(icsUrls[i]);
+  }
+}
+
+function testCalendarFetch(settings) {
+  var urls = getCalendarUrls(settings);
+  if (urls.length === 0) {
+    Pebble.showSimpleNotificationOnPebble('Calendar Test', 'Enter an iCal URL first.');
+    return;
+  }
+
+  var pending = urls.length;
+  var okCount = 0;
+  var failCount = 0;
+
+  function finish() {
+    pending--;
+    if (pending > 0) {
+      return;
+    }
+    if (okCount > 0 && failCount === 0) {
+      Pebble.showSimpleNotificationOnPebble('Calendar Test', 'Success: ' + okCount + ' feed(s) fetched.');
+    } else if (okCount > 0) {
+      Pebble.showSimpleNotificationOnPebble('Calendar Test', 'Partial success: ' + okCount + ' ok, ' + failCount + ' failed.');
+    } else {
+      Pebble.showSimpleNotificationOnPebble('Calendar Test', 'Fetch failed for all calendars.');
+    }
+  }
+
+  for (var i = 0; i < urls.length; i++) {
+    (function(url) {
+      var req = new XMLHttpRequest();
+      req.onload = function() {
+        if (req.status >= 200 && req.status < 300 && req.responseText.indexOf('BEGIN:VCALENDAR') >= 0) {
+          okCount++;
+        } else {
+          failCount++;
+        }
+        finish();
+      };
+      req.onerror = function() {
+        failCount++;
+        finish();
+      };
+      req.open('GET', url, true);
+      req.send();
+    })(urls[i]);
+  }
+}
+
+function startMeetingPolling() {
+  if (meetingTimer) {
+    clearInterval(meetingTimer);
+  }
+
+  refreshMeetingStatus();
+  meetingTimer = setInterval(refreshMeetingStatus, CALENDAR_POLL_INTERVAL_MS);
+}
+
 if (typeof Pebble !== 'undefined') {
   Pebble.addEventListener('ready', function() {
     console.log('PebbleKit JS ready!');
+    startMeetingPolling();
   });
 
   Pebble.addEventListener('showConfiguration', function() {
-    var url = buildConfigUrl(hasColor());
+    var url = buildConfigUrl(hasColor(), loadStoredSettings());
     console.log('Showing configuration page');
     Pebble.openURL(url);
   });
@@ -130,6 +442,17 @@ if (typeof Pebble !== 'undefined') {
 
     var configData = JSON.parse(decodeURIComponent(e.response));
     console.log('Configuration page returned: ' + JSON.stringify(configData));
+    configData.calendar_ics_1 = normalizeCalendarUrl(configData.calendar_ics_1 || configData.calendar_ics || '');
+    configData.calendar_ics_2 = normalizeCalendarUrl(configData.calendar_ics_2 || '');
+    configData.calendar_ics_3 = normalizeCalendarUrl(configData.calendar_ics_3 || '');
+    delete configData.calendar_ics;
+    saveStoredSettings(configData);
+    refreshMeetingStatus();
+
+    if (configData.test_fetch === '1') {
+      testCalendarFetch(configData);
+      return;
+    }
 
     var dict = configDataToDict(configData);
     Pebble.sendAppMessage(dict, function() {
@@ -145,6 +468,10 @@ if (typeof module !== 'undefined' && module.exports) {
     buildConfigUrl: buildConfigUrl,
     configDataToDict: configDataToDict,
     hasColorPlatform: hasColorPlatform,
-    hexColorToARGB2222: hexColorToARGB2222
+    hexColorToARGB2222: hexColorToARGB2222,
+    parseIcsEvents: parseIcsEvents,
+    computeMeetingStatus: computeMeetingStatus,
+    normalizeCalendarUrl: normalizeCalendarUrl,
+    getCalendarUrls: getCalendarUrls
   };
 }

@@ -10,9 +10,11 @@
 Window *window;
 TextLayer *dayOfMonthLayer;
 TextLayer *btStatusLayer;
+TextLayer *meetingStatusLayer;
 TextLayer *batteryStatusLayer;
 char dayOfMonthText[32];
 char btStatusText[12];
+char meetingStatusText[20];
 char batteryStatusText[20];
 int lastDisplayedDay = -1;
 AppTimer *backlightTimer = NULL;
@@ -62,13 +64,14 @@ int dateGesture = GESTURE_ANY;
 // 1 = text and light only
 // 2 = on
 int bt_lost_notification = BT_NOTIFY_ON;
+int meetingStatus = MEETING_STATUS_NONE;
 
 // Screen resolution. Set in the init function.
 int xres;
 int yres;
 
 static ConfigMessageContext config_message_context;
-#define STATUS_BAR_HEIGHT 14
+#define STATUS_BAR_HEIGHT 24
 #define DAY_LINE_RESERVED_HEIGHT 30
 #define TIME_BLOCK_Y_BIAS -2
 
@@ -93,7 +96,19 @@ void update_status_indicators(void)
 		batteryStatusText[0] = '\0';
 	}
 
+	if (meetingStatus == MEETING_STATUS_NOW) {
+		text_layer_set_font(meetingStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
+		snprintf(meetingStatusText, sizeof(meetingStatusText), "MEETING NOW!");
+	} else if (meetingStatus == MEETING_STATUS_SOON) {
+		text_layer_set_font(meetingStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_24));
+		snprintf(meetingStatusText, sizeof(meetingStatusText), "MEETING SOON!");
+	} else {
+		text_layer_set_font(meetingStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
+		meetingStatusText[0] = '\0';
+	}
+
 	text_layer_set_text(btStatusLayer, btStatusText);
+	text_layer_set_text(meetingStatusLayer, meetingStatusText);
 	text_layer_set_text(batteryStatusLayer, batteryStatusText);
 }
 
@@ -604,8 +619,20 @@ void set_bt_lost_notification(int bt_notification) {
 	bt_lost_notification = bt_notification;
 }
 
+void set_meeting_status(int status) {
+	if (status < MEETING_STATUS_NONE || status > MEETING_STATUS_NOW) {
+		return;
+	}
+	meetingStatus = status;
+	update_status_indicators();
+}
+
 void inbox_received_handler(DictionaryIterator *iter, void *context) {
   (void)context;
+  Tuple *meeting_status_t = dict_find(iter, KEY_MEETING_STATUS);
+  if (meeting_status_t) {
+  	set_meeting_status(meeting_status_t->value->uint8);
+  }
   config_message_handle_inbox(iter, &config_message_context);
 }
 
@@ -680,6 +707,15 @@ void handle_init() {
 	text_layer_set_text(btStatusLayer, btStatusText);
 	layer_add_child(window_layer, text_layer_get_layer(btStatusLayer));
 
+	meetingStatusLayer = text_layer_create(GRect(0, 0, xres, STATUS_BAR_HEIGHT));
+	text_layer_set_font(meetingStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
+	text_layer_set_text_color(meetingStatusLayer, regularTextColor);
+	text_layer_set_background_color(meetingStatusLayer, GColorClear);
+	text_layer_set_text_alignment(meetingStatusLayer, GTextAlignmentCenter);
+	meetingStatusText[0] = '\0';
+	text_layer_set_text(meetingStatusLayer, meetingStatusText);
+	layer_add_child(window_layer, text_layer_get_layer(meetingStatusLayer));
+
 	batteryStatusLayer = text_layer_create(GRect(xres / 2 - 2, 0, xres / 2, STATUS_BAR_HEIGHT));
 	text_layer_set_font(batteryStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
 	text_layer_set_text_color(batteryStatusLayer, regularTextColor);
@@ -752,6 +788,7 @@ void handle_deinit()
 	}
 	text_layer_destroy(dayOfMonthLayer);
 	text_layer_destroy(btStatusLayer);
+	text_layer_destroy(meetingStatusLayer);
 	text_layer_destroy(batteryStatusLayer);
 	connection_service_unsubscribe();
 	battery_state_service_unsubscribe();
