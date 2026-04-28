@@ -11,7 +11,7 @@
 #include "lang-german-eastern.h"
 #include "lang-german-western.h"
 
-static const Language* language = &LANG_SWEDISH;
+static const Language* language = &LANG_ENGLISH;
 
 void set_language(uint8_t lang) {
   switch (lang) {

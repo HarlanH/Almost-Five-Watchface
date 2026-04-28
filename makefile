@@ -1,6 +1,6 @@
 c:
-	./waf configure && ./waf build
+	npm run build
 l: c
-	deploypebble.sh load ~/Pebble/TextWatch/build/TextWatch.pbw
+	deploypebble.sh load `ls build/*.pbw | head -n 1`
 d: c
-	deploypebble.sh reinstall  ~/Pebble/TextWatch/build/TextWatch.pbw 
+	deploypebble.sh reinstall `ls build/*.pbw | head -n 1`

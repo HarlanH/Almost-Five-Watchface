@@ -42,3 +42,33 @@ Download / Install
 ------------------
 This watchface is available on the Pebble App store as [Fuzzy Text Plus](https://apps.getpebble.com/en_US/application/52de476d6094ff6bf0000046).
 
+Modern Rebble development workflow
+----------------------------------
+
+Prerequisites
+- Rebble/Pebble SDK tooling with `pebble` CLI available in your shell.
+- Node.js 18+ for PKJS regression tests.
+
+Build commands
+- `npm run build` - configure and build a `.pbw` from a clean checkout.
+- `npm run clean` - remove build artifacts.
+- `npm test` - run PKJS regression tests.
+
+Legacy make targets still work and delegate to npm scripts:
+- `make c` - build
+- `make l` - build + load first `build/*.pbw`
+- `make d` - build + reinstall first `build/*.pbw`
+
+Configuration page
+------------------
+
+The PKJS companion now uses an embedded `data:` URL configuration page, similar to `anylist-pebble`.
+This removes dependency on an external hosted config URL and simplifies emulator/device setup.
+
+Migration troubleshooting
+-------------------------
+
+- If `npm run build` fails with missing `pebble`, install or re-link your Pebble/Rebble SDK tooling.
+- If configuration fails to open, inspect PKJS logs from the phone/emulator runtime.
+- If settings save but do not apply, inspect phone logs for PKJS AppMessage payloads and ensure message keys match `package.json`.
+

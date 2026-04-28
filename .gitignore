@@ -4,6 +4,5 @@
 
 # Ignore build generated files
 build
-wscript
 
 node_modules/

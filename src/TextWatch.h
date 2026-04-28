@@ -93,6 +93,8 @@ struct tm *get_localtime();
 void refresh_time();
 void set_offset(int offset);
 void set_message_time(int mTime);
+void set_gesture(int gesture);
+void set_bt_lost_notification(int bt_notification);
 void inbox_received_handler(DictionaryIterator *iter, void *context);
 void notify_bt_lost();
 void bt_handler(bool connected);

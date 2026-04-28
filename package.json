@@ -2,6 +2,12 @@
   "version": "3.17.0",
   "author": "Mattias Backlund",
   "private": true,
+  "scripts": {
+    "build": "pebble build",
+    "clean": "pebble clean",
+    "test:js": "node --test test/pkjs/**/*.test.js",
+    "test": "npm run test:js"
+  },
   "dependencies": {},
   "keywords": [
     "pebble-app"

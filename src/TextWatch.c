@@ -5,6 +5,7 @@
 
 #include "num2words.h"
 #include "TextWatch.h"
+#include "config_message.h"
 
 Window *window;
 
@@ -55,6 +56,8 @@ int bt_lost_notification = BT_NOTIFY_ON;
 // Screen resolution. Set in the init function.
 int xres;
 int yres;
+
+static ConfigMessageContext config_message_context;
 
 // UTF8 aware strlen() for a sequence of bytes
 int strlenUtf8(char *start, char *end) 
@@ -496,99 +499,8 @@ void set_bt_lost_notification(int bt_notification) {
 }
 
 void inbox_received_handler(DictionaryIterator *iter, void *context) {
-  APP_LOG(APP_LOG_LEVEL_DEBUG, "Received inbox message");
-
-  // Language
-  Tuple *language_t = dict_find(iter, KEY_LANGUAGE);
-  if (language_t) {
-  	set_language(language_t->value->uint8);
-  	persist_write_int(KEY_LANGUAGE, language_t->value->uint8);
-  	APP_LOG(APP_LOG_LEVEL_DEBUG, "Language is %d", language_t->value->uint8);
-  }
-
-  // Time offset
-  Tuple *offset_t = dict_find(iter, KEY_OFFSET);
-  if (offset_t) {
-  	set_offset(offset_t->value->uint16);
-  	persist_write_int(KEY_OFFSET, offset_t->value->uint16);
-  	APP_LOG(APP_LOG_LEVEL_DEBUG, "Offset is %d", offset_t->value->uint16);
-  }
-
-  // Message time
-  Tuple *message_time_t = dict_find(iter, KEY_MESSAGE_TIME);
-  if (message_time_t) {
-  	set_message_time(message_time_t->value->uint8);
-  	persist_write_int(KEY_MESSAGE_TIME, message_time_t->value->uint8);
-  	APP_LOG(APP_LOG_LEVEL_DEBUG, "Message time is %d", message_time_t->value->uint8);
-  }
-
-  // Gesture
-  Tuple *gesture_t = dict_find(iter, KEY_GESTURE);
-  if (gesture_t) {
-  	set_gesture(gesture_t->value->uint8);
-  	persist_write_int(KEY_GESTURE, gesture_t->value->uint8);
-  	APP_LOG(APP_LOG_LEVEL_DEBUG, "Gesture is %d", gesture_t->value->uint8);
-  }
-
-  // BT lost notification
-  Tuple *bt_notification_t = dict_find(iter, KEY_BT_NOTIFICATION);
-  if (bt_notification_t) {
-  	set_bt_lost_notification(bt_notification_t->value->uint8);
-  	persist_write_int(KEY_BT_NOTIFICATION, bt_notification_t->value->uint8);
-  	APP_LOG(APP_LOG_LEVEL_DEBUG, "BT notification is %d", bt_notification_t->value->uint8);
-  }
-
-#ifdef PBL_COLOR
-  // Background color
-  Tuple *background_color_t = dict_find(iter, KEY_BACKGROUND);
-  if(background_color_t) {
-  	GColor8 bg_color;
-
-  	bg_color.argb = background_color_t->value->uint8;
-  	window_set_background_color(window, bg_color);
-  	persist_write_int(KEY_BACKGROUND, bg_color.argb);	
-  	APP_LOG(APP_LOG_LEVEL_DEBUG, "Offset is %d", background_color_t->value->uint8);
-  }
-
-  // Regular text color
-  Tuple *regular_text_t = dict_find(iter, KEY_REGULAR_TEXT);
-  if(regular_text_t) {
-  	regularTextColor.argb = regular_text_t->value->uint8;
-  	persist_write_int(KEY_REGULAR_TEXT, regularTextColor.argb);
-  }
-
-  // Bold text color
-  Tuple *bold_text_t = dict_find(iter, KEY_BOLD_TEXT);
-  if(bold_text_t) {
-  	boldTextColor.argb = bold_text_t->value->uint8;
-  	persist_write_int(KEY_BOLD_TEXT, boldTextColor.argb);
-  }
-
-#else
-  // Inverse colors
-  Tuple *color_inverse_t = dict_find(iter, KEY_INVERSE);
-  if(color_inverse_t) {
-  	APP_LOG(APP_LOG_LEVEL_DEBUG, "Inverse colors is %d", color_inverse_t->value->int8);
-  	if (color_inverse_t->value->int8 > 0) {  // Read boolean as an integer
-	    // Set inverse colors
-	    window_set_background_color(window, GColorWhite);
-	    regularTextColor.argb = GColorBlack.argb;
-	    boldTextColor.argb = GColorBlack.argb;
-	    // Persist value
-	    persist_write_bool(KEY_INVERSE, true);
-	} else {
-	    // Set normal colors
-	    window_set_background_color(window, GColorBlack);
-	    regularTextColor.argb = GColorWhite.argb;
-	    boldTextColor.argb = GColorWhite.argb;
-	    // Persist value
-	    persist_write_bool(KEY_INVERSE, false);
-	}
-  }
-
-#endif
-
-  refresh_time();
+  (void)context;
+  config_message_handle_inbox(iter, &config_message_context);
 }
 
 void notify_bt_lost() {
@@ -614,60 +526,22 @@ void bt_handler(bool connected) {
 }
 
 void readPersistedState() {
-	if (persist_exists(KEY_LANGUAGE)) {
-		set_language(persist_read_int(KEY_LANGUAGE));
-	}
-
-	if (persist_exists(KEY_OFFSET)) {
-		set_offset(persist_read_int(KEY_OFFSET));
-	}
-
-	if (persist_exists(KEY_MESSAGE_TIME)) {
-		set_message_time(persist_read_int(KEY_MESSAGE_TIME));
-	}
-
-	if (persist_exists(KEY_GESTURE)) {
-		set_gesture(persist_read_int(KEY_GESTURE));
-	}
-
-	if (persist_exists(KEY_BT_NOTIFICATION)) {
-		set_bt_lost_notification(persist_read_int(KEY_BT_NOTIFICATION));
-	}
-
-	// Set default colors
-	GColor8 backgroundColor;
-	backgroundColor.argb = GColorBlack.argb;
-	regularTextColor.argb=GColorWhite.argb;
-	boldTextColor.argb=GColorWhite.argb;
-
-
-#ifdef PBL_COLOR
-	if (persist_exists(KEY_BACKGROUND)) {
-		backgroundColor.argb = persist_read_int(KEY_BACKGROUND);
-	}
-
-	if (persist_exists(KEY_REGULAR_TEXT)) {
-		regularTextColor.argb = persist_read_int(KEY_REGULAR_TEXT);
-	}
-
-	if (persist_exists(KEY_BOLD_TEXT)) {
-		boldTextColor.argb = persist_read_int(KEY_BOLD_TEXT);
-	}
-#else
-	if (persist_read_bool(KEY_INVERSE)) {
-		backgroundColor.argb = GColorWhite.argb;
-		regularTextColor.argb=GColorBlack.argb;
-		boldTextColor.argb=GColorBlack.argb;
-	}
-#endif
-
-	// Set background color
-	window_set_background_color(window, backgroundColor);
+	config_message_read_persisted_state(&config_message_context);
 }
 
 void handle_init() {
 	window = window_create();
 	window_stack_push(window, true);
+
+	config_message_context.window = window;
+	config_message_context.regular_text_color = &regularTextColor;
+	config_message_context.bold_text_color = &boldTextColor;
+	config_message_context.set_language = set_language;
+	config_message_context.set_offset = set_offset;
+	config_message_context.set_message_time = set_message_time;
+	config_message_context.set_gesture = set_gesture;
+	config_message_context.set_bt_lost_notification = set_bt_lost_notification;
+	config_message_context.refresh_time = refresh_time;
 
 	Layer *window_layer = window_get_root_layer(window);
     GRect window_bounds = layer_get_bounds(window_layer);

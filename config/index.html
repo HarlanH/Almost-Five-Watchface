@@ -3,8 +3,8 @@
   <head>
     <meta charset="UTF-8">
     <title>Fuzzy Text - Configuration</title>
-    <link rel='stylesheet' type='text/css' href='css/slate.min.css'>
-    <script src='js/slate.min.js'></script>
+    <link rel='stylesheet' type='text/css' href='css/slate.css'>
+    <script src='js/slate.js'></script>
     <style>
       .title {
         padding: 15px 10px;
@@ -247,8 +247,29 @@
     console.log('Submit');
 
     // Set the return URL depending on the runtime environment
-    var return_to = getQueryParam('return_to', 'pebblejs://close#');
-    document.location = return_to + encodeURIComponent(JSON.stringify(getConfigData()));
+    var return_to = getQueryParam('return_to', '');
+    var payload = encodeURIComponent(JSON.stringify(getConfigData()));
+
+    if (return_to) {
+      document.location = return_to + payload;
+      return;
+    }
+
+    // Local file mode fallback (useful when opened directly in browser).
+    // Try the Pebble callback protocol first, then show a selectable prompt.
+    var pebbleCloseUrl = 'pebblejs://close#' + payload;
+    try {
+      document.location = pebbleCloseUrl;
+    } catch (e) {
+      // Ignore and fall through to prompt.
+    }
+
+    setTimeout(function() {
+      window.prompt(
+        'No return_to parameter found. Copy this JSON (Cmd/Ctrl+C):',
+        decodeURIComponent(payload)
+      );
+    }, 200);
   });
 
   (function() {
@@ -273,7 +294,8 @@
     }
 
     // Add option and language avabilities depending on client version
-    var version = getQueryParam("v");
+    // If no explicit version is provided, show all supported options.
+    var version = parseInt(getQueryParam("v", "999"), 10);
     if (version > 0) {
       if (version >= 33) {
         Array.prototype.push.apply(selected_configs, document.getElementsByClassName("language-config"));        
