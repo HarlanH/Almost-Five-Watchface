@@ -215,6 +215,15 @@ void configureSmallBoldLayer(TextLayer *textlayer)
 	text_layer_set_text_alignment(textlayer, TEXT_ALIGN);
 }
 
+// Configure compact bold line of text
+void configureCompactBoldLayer(TextLayer *textlayer)
+{
+	text_layer_set_font(textlayer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
+	text_layer_set_text_color(textlayer, boldTextColor);
+	text_layer_set_background_color(textlayer, GColorClear);
+	text_layer_set_text_alignment(textlayer, TEXT_ALIGN);
+}
+
 // Configure light line of text
 void configureLightLayer(TextLayer *textlayer)
 {
@@ -233,24 +242,47 @@ void configureSmallLayer(TextLayer *textlayer)
 	text_layer_set_text_alignment(textlayer, TEXT_ALIGN);
 }
 
+// Configure compact line of text
+void configureCompactLayer(TextLayer *textlayer)
+{
+	text_layer_set_font(textlayer, fonts_get_system_font(FONT_KEY_GOTHIC_28));
+	text_layer_set_text_color(textlayer, regularTextColor);
+	text_layer_set_background_color(textlayer, GColorClear);
+	text_layer_set_text_alignment(textlayer, TEXT_ALIGN);
+}
+
 // Configure the layers for the given text
 int configureLayersForText(char text[NUM_LINES][BUFFER_SIZE], char format[])
 {
 	int numLines = 0;
 	int height = 0;
 	int offsets[4];
+	bool compactLayout = false;
+
+	// Count lines first so we can choose a compact style for 4-row layouts.
+	for (int i = 0; i < NUM_LINES; i++) {
+		if (strlen(text[i]) == 0) {
+			break;
+		}
+		numLines++;
+	}
+	compactLayout = (numLines == NUM_LINES);
 
 	// Set bold layer.
 	int i;
-	for (i = 0; i < NUM_LINES; i++) {
+	for (i = 0; i < numLines; i++) {
 		if (strlen(text[i]) == 0) {
 			break;
 		}
 
-		offsets[i] = ROW_OFFSET;
+		offsets[i] = compactLayout ? ROW_OFFSET_COMPACT : ROW_OFFSET;
 		if (format[i] == 'B') // Bold
 		{
-			configureBoldLayer(lines[i].nextLayer);
+			if (compactLayout) {
+				configureCompactBoldLayer(lines[i].nextLayer);
+			} else {
+				configureBoldLayer(lines[i].nextLayer);
+			}
 		}
 		else if (format[i] == 'b') // Small bold
 		{
@@ -274,7 +306,11 @@ int configureLayersForText(char text[NUM_LINES][BUFFER_SIZE], char format[])
 		}
 		else // Normal line
 		{
-			configureLightLayer(lines[i].nextLayer);
+			if (compactLayout) {
+				configureCompactLayer(lines[i].nextLayer);
+			} else {
+				configureLightLayer(lines[i].nextLayer);
+			}
 		}
 		height += offsets[i];
 	}

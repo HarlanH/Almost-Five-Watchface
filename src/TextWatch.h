@@ -29,6 +29,8 @@
 #define ROW_OFFSET 40
 // Vertical distance in pixels between small lines
 #define ROW_OFFSET_SMALL 24
+// Vertical distance in pixels for compact 4-line layout
+#define ROW_OFFSET_COMPACT 28
 
 // Pull top line up by this many pixels
 #define TOP_MARGIN 13
