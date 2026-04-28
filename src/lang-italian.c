@@ -68,8 +68,8 @@ const Language LANG_ITALIAN = {
   .connection_lost = "Dov'è il tuo  tele- fono? ",
 #endif
   .day_of_month_format = "il %d",
-  .meeting_now = "RIUNIONE ORA!",
-  .meeting_soon = "RIUNIONE PRESTO!",
+  .meeting_now = "Riunione Ora!",
+  .meeting_soon = "Riunione Presto!",
   .battery_status_format = "BAT %d%%",
 
     .number_of_exceptions = 0

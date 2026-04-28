@@ -1,5 +1,5 @@
 // Watchface config version
-var version = 42;
+var version = 43;
 var SETTINGS_STORAGE_KEY = 'fuzzy_text_plus_settings';
 var CALENDAR_POLL_INTERVAL_MS = 300000;
 var MEETING_STATUS_NONE = 0;
@@ -20,8 +20,9 @@ function buildConfigUrl(hasColorScreen, initialSettings) {
     ".hidden{display:none}</style></head><body>" +
     "<h3>Fuzzy Text Plus Settings</h3>" +
     "<div class='row'><label>Language</label><select id='language'>" +
-    "<option value='1'>Svenska</option><option value='2'>English</option><option value='3'>Norsk</option><option value='4'>Nederlands</option>" +
-    "<option value='5'>Italiano</option><option value='6'>Español</option><option value='7'>Deutsch (O)</option><option value='8'>Deutsch (w)</option></select></div>" +
+    "<option value='1'>Svenska</option><option value='2'>English (US)</option><option value='11'>English (UK)</option><option value='3'>Norsk</option><option value='4'>Nederlands</option>" +
+    "<option value='5'>Italiano</option><option value='6'>Español</option><option value='7'>Deutsch (O)</option><option value='8'>Deutsch (w)</option>" +
+    "<option value='9'>Français</option><option value='10'>日本語 (romaji)</option></select></div>" +
     "<div id='bwRow' class='row hidden'><label><input id='inverse' type='checkbox'> Inverse colors</label></div>" +
     "<div id='colorRows' class='hidden'>" +
     "<div class='row'><label>Background color (0xRRGGBB)</label><input id='background' type='text' value='0x000000'></div>" +

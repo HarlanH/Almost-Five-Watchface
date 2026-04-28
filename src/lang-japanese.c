@@ -1,0 +1,64 @@
+#include "num2words.h"
+
+const Language LANG_JAPANESE = {
+  .hours = {
+    "ichi",
+    "ni",
+    "san",
+    "shi",
+    "go",
+    "roku",
+    "shichi",
+    "hachi",
+    "ku",
+    "ju",
+    "juuichi",
+    "juuni"
+  },
+
+#ifdef SCREEN_WIDE
+  .phrases = {
+    "*$1 ji ",
+    "*$1 ji gofun ",
+    "*$1 ji juppun ",
+    "*$1 ji juugofun ",
+    "*$1 ji nijuppun ",
+    "*$1 ji nijuugofun ",
+    "*$1 ji han ",
+    "*$2 ji nijuugofun mae ",
+    "*$2 ji nijuppun mae ",
+    "*$2 ji juugofun mae ",
+    "*$2 ji juppun mae ",
+    "*$2 ji gofun mae "
+  },
+#else
+  .phrases = {
+    "*$1 ji ",
+    "*$1 ji gofun ",
+    "*$1 ji juppun ",
+    "*$1 ji juugofun ",
+    "*$1 ji nijuppun ",
+    "*$1 ji nijuugofun ",
+    "*$1 ji han ",
+    "*$2 ji nijuugofun mae ",
+    "*$2 ji nijuppun mae ",
+    "*$2 ji juugofun mae ",
+    "*$2 ji juppun mae ",
+    "*$2 ji gofun mae "
+  },
+#endif
+
+  .greetings = {
+    "Ohayo ",
+    "Konnichiwa ",
+    "Konbanwa ",
+    "Oyasumi "
+  },
+  .connection_lost = "Denwa wa doko? ",
+  .day_of_month_format = "%d nichi",
+  .meeting_now = "Kaigi ima!",
+  .meeting_soon = "Kaigi sugu!",
+  .battery_status_format = "BAT %d%%",
+
+  .number_of_exceptions = 0
+};

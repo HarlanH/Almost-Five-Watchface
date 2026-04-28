@@ -71,8 +71,8 @@ const Language LANG_NORWEGIAN = {
 
 #endif
   .day_of_month_format = "den %d",
-  .meeting_now = "MOTE NAA!",
-  .meeting_soon = "MOTE SNART!",
+  .meeting_now = "Mote Naa!",
+  .meeting_soon = "Mote Snart!",
   .battery_status_format = "BAT %d%%",
 
 

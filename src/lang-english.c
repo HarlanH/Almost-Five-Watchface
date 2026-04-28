@@ -1,5 +1,7 @@
 #include "num2words.h"
 
+/* Informal American English (default LANG_EN) */
+
 const Language LANG_ENGLISH = {
   .hours = {
     "one",
@@ -19,54 +21,54 @@ const Language LANG_ENGLISH = {
 #ifdef SCREEN_WIDE
   .phrases = {
     "*$1 o'clock ",
-    "five past *$1 ",
-    "ten past *$1 ",
-    "quarter past *$1 ",
-    "twenty past *$1 ",
-    "twenty five past *$1 ",
-    "half past *$1 ",
-    "twenty five to *$2 ",
-    "twenty  to *$2 ",
-    "quarter to *$2 ",
-    "ten to *$2 ",
-    "five to *$2 "
+    "five after *$1 ",
+    "ten after *$1 ",
+    "quarter after *$1 ",
+    "twenty after *$1 ",
+    "twenty five after *$1 ",
+    "*$1 thirty",
+    "*$1 thirty five",
+    "twenty til *$2 ",
+    "quarter til *$2 ",
+    "ten til *$2 ",
+    "almost *$2 "
   },
 
   .greetings = {
     "Good morning ",
-    "Good  day ",
+    "Good afternoon ",
     "Good evening ",
     "Good night "
   },
 #else
   .phrases = {
     "*$1 o'clock ",
-    "five  past *$1 ",
-    "ten  past *$1 ",
-    "quarter past *$1 ",
-    "twenty past *$1 ",
-    "twenty five  past *$1 ",
+    "five  after *$1 ",
+    "ten  after *$1 ",
+    "quarter after *$1 ",
+    "twenty after *$1 ",
+    "twenty five  after *$1 ",
     "half  past *$1 ",
-    "twenty five to *$2 ",
-    "twenty  to *$2 ",
-    "quarter to *$2 ",
-    "ten to *$2 ",
-    "five to *$2 "
+    "twenty five till *$2 ",
+    "twenty  till *$2 ",
+    "quarter till *$2 ",
+    "ten till *$2 ",
+    "almost *$2 "
   },
 
   .greetings = {
     "Good  mor-  ning ",
-    "Good  day ",
+    "Good after- noon ",
     "Good even-  ing ",
     "Good night "
   },
 #endif
 
-  .connection_lost = "Where  is your phone? ",
+  .connection_lost = "Where's your phone? ",
   .day_of_month_format = "the %d",
-  .meeting_now = "MEETING NOW!",
-  .meeting_soon = "MEETING SOON!",
+  .meeting_now = "Meeting Now!",
+  .meeting_soon = "Meeting Soon!",
   .battery_status_format = "BAT %d%%",
 
-    .number_of_exceptions = 0
+  .number_of_exceptions = 0
 };

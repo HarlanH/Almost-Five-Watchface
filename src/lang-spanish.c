@@ -62,8 +62,8 @@ const Language LANG_SPANISH = {
   .connection_lost = "Dónde está tu telé- fono ",
 #endif
   .day_of_month_format = "el %d",
-  .meeting_now = "REUNION YA!",
-  .meeting_soon = "REUNION PRONTO!",
+  .meeting_now = "Reunión Ya!",
+  .meeting_soon = "Reunión Pronto!",
   .battery_status_format = "BAT %d%%",
 
 

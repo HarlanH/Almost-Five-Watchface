@@ -20,6 +20,14 @@ test('buildConfigUrl returns embedded data URL', () => {
   assert.match(decodeURIComponent(url), /pebblejs:\/\/close#/);
 });
 
+test('buildConfigUrl includes French and Japanese language options', () => {
+  const html = decodeURIComponent(buildConfigUrl(false));
+  assert.match(html, /<option value='9'>Français<\/option>/);
+  assert.match(html, /<option value='10'>日本語 \(romaji\)<\/option>/);
+  assert.match(html, /<option value='2'>English \(US\)<\/option>/);
+  assert.match(html, /<option value='11'>English \(UK\)<\/option>/);
+});
+
 test('hasColorPlatform recognizes known color platforms', () => {
   assert.equal(hasColorPlatform('basalt'), true);
   assert.equal(hasColorPlatform('chalk'), true);
@@ -54,6 +62,15 @@ test('configDataToDict maps app settings keys', () => {
   assert.equal(dict.KEY_MESSAGE_TIME, 3);
   assert.equal(dict.KEY_GESTURE, 4);
   assert.equal(dict.KEY_BT_NOTIFICATION, 2);
+});
+
+test('configDataToDict supports new language identifiers', () => {
+  const french = configDataToDict({ language: '9' });
+  const japanese = configDataToDict({ language: '10' });
+  const uk = configDataToDict({ language: '11' });
+  assert.equal(french.KEY_LANGUAGE, 9);
+  assert.equal(japanese.KEY_LANGUAGE, 10);
+  assert.equal(uk.KEY_LANGUAGE, 11);
 });
 
 test('parseIcsEvents ignores transparent and free events', () => {

@@ -12,6 +12,7 @@ Features
 --------
  - Fuzzy time in natural language with 5 minute precision.
  - Several languages are supported.
+ - Current languages: Swedish, English (US, default), English (UK), Norwegian, Dutch, Italian, Spanish, German (east), German (west), French, Japanese (romaji)
  - The large and easy to read fonts of the original Text Watch
  - Buzz and message when bluetooth connection is lost
  - Top status indicators: bluetooth disconnect and low battery (< 40%)
@@ -29,6 +30,7 @@ Features
 
 Possible future features
 ----
+ - [ ] Japanese in kana/kanji: system fonts lack CJK glyphs; bundle a subset font and load it for the text layers that show time strings.
  - [ ] More languages
  - [ ] Configurable text alignment
  - [ ] Graphic icon variants for bluetooth and battery indicators

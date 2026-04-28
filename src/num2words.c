@@ -4,12 +4,15 @@
 
 #include "lang-swedish.h"
 #include "lang-english.h"
+#include "lang-english-uk.h"
 #include "lang-norwegian.h"
 #include "lang-dutch.h"
 #include "lang-italian.h"
 #include "lang-spanish.h"
 #include "lang-german-eastern.h"
 #include "lang-german-western.h"
+#include "lang-french.h"
+#include "lang-japanese.h"
 
 static const Language* language = &LANG_ENGLISH;
 
@@ -39,6 +42,10 @@ void set_language(uint8_t lang) {
       language = &LANG_ENGLISH;
       break;
 
+    case LANG_EN_GB:
+      language = &LANG_ENGLISH_UK;
+      break;
+
     case LANG_SE:
       language = &LANG_SWEDISH;
       break;
@@ -65,6 +72,14 @@ void set_language(uint8_t lang) {
 
     case LANG_GW:
       language = &LANG_GERMAN_W;
+      break;
+
+    case LANG_FR:
+      language = &LANG_FRENCH;
+      break;
+
+    case LANG_JA:
+      language = &LANG_JAPANESE;
       break;
 
     default:
@@ -158,7 +173,7 @@ void get_day_of_month_message(int day, char* message, size_t length)
     return;
   }
 
-  if (language == &LANG_ENGLISH) {
+  if (language == &LANG_ENGLISH || language == &LANG_ENGLISH_UK) {
     get_english_day_of_month_ordinal(day, message, length);
     return;
   }

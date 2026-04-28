@@ -10,6 +10,9 @@
 #define LANG_ES 6
 #define LANG_GE 7
 #define LANG_GW 8
+#define LANG_FR 9
+#define LANG_JA 10
+#define LANG_EN_GB 11
 
 #if defined PBL_PLATFORM_CHALK || defined PBL_PLATFORM_EMERY
 	#define SCREEN_WIDE 1
