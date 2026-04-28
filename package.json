@@ -1,6 +1,6 @@
 {
-  "version": "3.17.0",
-  "author": "Mattias Backlund",
+  "version": "4.0.0",
+  "author": "Harlan Harris and Mattias Backlund",
   "private": true,
   "scripts": {
     "build": "pebble build",
@@ -38,7 +38,7 @@
       "KEY_BT_NOTIFICATION": 8
     },
     "enableMultiJS": false,
-    "displayName": "Fuzzy Text Watch Plus",
+    "displayName": "Fuzzy Text Watch Star",
     "watchapp": {
       "onlyShownOnCommunication": false,
       "hiddenApp": false,
@@ -55,5 +55,5 @@
       "configurable"
     ]
   },
-  "name": "Fuzzy Text Plus"
+  "name": "Fuzzy Text Watch Star"
 }

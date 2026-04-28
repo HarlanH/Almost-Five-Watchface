@@ -26,12 +26,12 @@
 // Vertical distance in pixels between lines
 #define ROW_HEIGHT 50
 // Vertical distance in pixels between lines
-#define ROW_OFFSET 37
+#define ROW_OFFSET 40
 // Vertical distance in pixels between small lines
 #define ROW_OFFSET_SMALL 24
 
 // Pull top line up by this many pixels
-#define TOP_MARGIN 10
+#define TOP_MARGIN 13
 // Pull line above small line up by this many pixels
 #define TOP_MARGIN_SMALL 5
 

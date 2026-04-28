@@ -8,6 +8,16 @@
 #include "config_message.h"
 
 Window *window;
+TextLayer *dayOfMonthLayer;
+TextLayer *btStatusLayer;
+TextLayer *batteryStatusLayer;
+char dayOfMonthText[32];
+char btStatusText[12];
+char batteryStatusText[20];
+int lastDisplayedDay = -1;
+AppTimer *backlightTimer = NULL;
+bool btConnected = true;
+int batteryPercent = 100;
 
 Line lines[NUM_LINES];
 
@@ -58,6 +68,34 @@ int xres;
 int yres;
 
 static ConfigMessageContext config_message_context;
+#define STATUS_BAR_HEIGHT 14
+#define DAY_LINE_RESERVED_HEIGHT 30
+#define TIME_BLOCK_Y_BIAS -2
+
+void backlight_off_handler(void *context)
+{
+	(void)context;
+	light_enable(false);
+	backlightTimer = NULL;
+}
+
+void update_status_indicators(void)
+{
+	if (btConnected) {
+		btStatusText[0] = '\0';
+	} else {
+		snprintf(btStatusText, sizeof(btStatusText), "BT!");
+	}
+
+	if (batteryPercent < 40) {
+		snprintf(batteryStatusText, sizeof(batteryStatusText), "BAT %d%%", batteryPercent);
+	} else {
+		batteryStatusText[0] = '\0';
+	}
+
+	text_layer_set_text(btStatusLayer, btStatusText);
+	text_layer_set_text(batteryStatusLayer, batteryStatusText);
+}
 
 // UTF8 aware strlen() for a sequence of bytes
 int strlenUtf8(char *start, char *end) 
@@ -242,8 +280,11 @@ int configureLayersForText(char text[NUM_LINES][BUFFER_SIZE], char format[])
 	}
 	numLines = i;
 
-	// Calculate y position of top Line
-	int ypos = (yres - height) / 2 - TOP_MARGIN;
+	// Center the animated time block between top status and bottom day lines.
+	int topInset = STATUS_BAR_HEIGHT + 2;
+	int bottomInset = DAY_LINE_RESERVED_HEIGHT;
+	int availableHeight = yres - topInset - bottomInset;
+	int ypos = topInset + (availableHeight - height) / 2 + TIME_BLOCK_Y_BIAS;
 
 	// Set y positions for the lines
 	for (int i = 0; i < numLines; i++)
@@ -322,6 +363,38 @@ void time_to_lines(int hours, int minutes, char lines[NUM_LINES][BUFFER_SIZE], c
 	time_to_words(hours, minutes, timeStr, length);
 	
 	string_to_lines(timeStr, lines, format);
+}
+
+void day_to_ordinal_words(int day, char *output, size_t length)
+{
+	static const char *ordinals[] = {
+		"",
+		"the first", "the second", "the third", "the fourth", "the fifth",
+		"the sixth", "the seventh", "the eighth", "the ninth", "the tenth",
+		"the eleventh", "the twelfth", "the thirteenth", "the fourteenth", "the fifteenth",
+		"the sixteenth", "the seventeenth", "the eighteenth", "the nineteenth", "the twentieth",
+		"the twenty-first", "the twenty-second", "the twenty-third", "the twenty-fourth", "the twenty-fifth",
+		"the twenty-sixth", "the twenty-seventh", "the twenty-eighth", "the twenty-ninth", "the thirtieth",
+		"the thirty-first"
+	};
+
+	if (day < 1 || day > 31) {
+		output[0] = '\0';
+		return;
+	}
+
+	snprintf(output, length, "%s", ordinals[day]);
+}
+
+void update_day_of_month_line(struct tm *t, bool force)
+{
+	if (!force && lastDisplayedDay == t->tm_mday) {
+		return;
+	}
+
+	lastDisplayedDay = t->tm_mday;
+	day_to_ordinal_words(t->tm_mday, dayOfMonthText, sizeof(dayOfMonthText));
+	text_layer_set_text(dayOfMonthLayer, dayOfMonthText);
 }
 
 // Update screen based on new time
@@ -408,16 +481,11 @@ static void accel_tap_handler(AccelAxisType axis, int32_t direction) {
 	}
   }
 
-  struct tm* t = get_localtime();
-  char message[32];
-  snprintf(message, 32, "<%02d:%02d:%02d  %d/%d  %d ",
-  	t->tm_hour,
-  	t->tm_min,
-  	t->tm_sec,
-  	t->tm_mday,
-  	t->tm_mon + 1,
-  	t->tm_year + 1900);
-  display_message(message, 6);
+  light_enable(true);
+  if (backlightTimer != NULL) {
+  	app_timer_cancel(backlightTimer);
+  }
+  backlightTimer = app_timer_register(1800, backlight_off_handler, NULL);
 }
 
 void check_connection(time_t *now) {
@@ -444,6 +512,7 @@ void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
 
   check_connection(&now);
 
+  update_day_of_month_line(tick_time, false);
   display_time(tick_time, force);
 }
 
@@ -475,6 +544,7 @@ struct tm *get_localtime()
 }
 
 void refresh_time() {
+	update_day_of_month_line(get_localtime(), true);
 	display_time(get_localtime(), true);
 }
 
@@ -516,6 +586,9 @@ void notify_bt_lost() {
 }
 
 void bt_handler(bool connected) {
+	btConnected = connected;
+	update_status_indicators();
+
 	if (connected) {
 		connectionLostTime = 0;
 	} else {
@@ -523,6 +596,11 @@ void bt_handler(bool connected) {
 		time(&now);
 		connectionLostTime = now + CONNECTION_LOST_MARGIN;
 	}
+}
+
+void battery_handler(BatteryChargeState charge_state) {
+	batteryPercent = charge_state.charge_percent;
+	update_status_indicators();
 }
 
 void readPersistedState() {
@@ -547,6 +625,33 @@ void handle_init() {
     GRect window_bounds = layer_get_bounds(window_layer);
     xres = window_bounds.size.w;
     yres = window_bounds.size.h;
+
+	dayOfMonthLayer = text_layer_create(GRect(0, yres - 30, xres, 28));
+	text_layer_set_font(dayOfMonthLayer, fonts_get_system_font(FONT_KEY_GOTHIC_24));
+	text_layer_set_text_color(dayOfMonthLayer, regularTextColor);
+	text_layer_set_background_color(dayOfMonthLayer, GColorClear);
+	text_layer_set_text_alignment(dayOfMonthLayer, TEXT_ALIGN);
+	dayOfMonthText[0] = '\0';
+	text_layer_set_text(dayOfMonthLayer, dayOfMonthText);
+	layer_add_child(window_layer, text_layer_get_layer(dayOfMonthLayer));
+
+	btStatusLayer = text_layer_create(GRect(2, 0, xres / 2, STATUS_BAR_HEIGHT));
+	text_layer_set_font(btStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+	text_layer_set_text_color(btStatusLayer, regularTextColor);
+	text_layer_set_background_color(btStatusLayer, GColorClear);
+	text_layer_set_text_alignment(btStatusLayer, GTextAlignmentLeft);
+	btStatusText[0] = '\0';
+	text_layer_set_text(btStatusLayer, btStatusText);
+	layer_add_child(window_layer, text_layer_get_layer(btStatusLayer));
+
+	batteryStatusLayer = text_layer_create(GRect(xres / 2 - 2, 0, xres / 2, STATUS_BAR_HEIGHT));
+	text_layer_set_font(batteryStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+	text_layer_set_text_color(batteryStatusLayer, regularTextColor);
+	text_layer_set_background_color(batteryStatusLayer, GColorClear);
+	text_layer_set_text_alignment(batteryStatusLayer, GTextAlignmentRight);
+	batteryStatusText[0] = '\0';
+	text_layer_set_text(batteryStatusLayer, batteryStatusText);
+	layer_add_child(window_layer, text_layer_get_layer(batteryStatusLayer));
 
     // Subscribe to taps
 	accel_tap_service_subscribe(accel_tap_handler);
@@ -580,6 +685,12 @@ void handle_init() {
 	connection_service_subscribe((ConnectionHandlers) {
 	  .pebble_app_connection_handler = bt_handler
 	});
+	btConnected = connection_service_peek_pebble_app_connection();
+
+	// Subscribe to battery events
+	battery_state_service_subscribe(battery_handler);
+	batteryPercent = battery_state_service_peek().charge_percent;
+	update_status_indicators();
 
 	// Set up listener for configuration changes
 	app_message_register_inbox_received(inbox_received_handler);
@@ -603,6 +714,11 @@ void handle_deinit()
 	{
 		destroy_line(&lines[i]);
 	}
+	text_layer_destroy(dayOfMonthLayer);
+	text_layer_destroy(btStatusLayer);
+	text_layer_destroy(batteryStatusLayer);
+	connection_service_unsubscribe();
+	battery_state_service_unsubscribe();
 
 	// Free window
 	window_destroy(window);

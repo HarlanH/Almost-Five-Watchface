@@ -14,9 +14,12 @@ Features
  - Several languages are supported.
  - The large and easy to read fonts of the original Text Watch
  - Buzz and message when bluetooth connection is lost
+ - Top status indicators: bluetooth disconnect and low battery (< 40%)
  - Configurable colors
  - Supports all pebble models up to and including Pebble Time Round
- - Configurable time offset for the shown five minute period
+ - Configurable time offset for when each fuzzy phrase changes (offset values are in seconds)
+ - Gesture-triggered backlight pulse
+ - Bottom fuzzy day-of-month text (for example: "the twenty-eighth")
  - Nice staggered animation
  - Between one and four lines of text, depending on need.
  - The text rows are always centered vertically
@@ -27,8 +30,8 @@ Possible future features
 ----
  - [ ] More languages
  - [ ] Configurable text alignment
- - [ ] Optional bluetooth lost icon
- - [ ] Shake to show date
+ - [ ] Graphic icon variants for bluetooth and battery indicators
+ - [ ] Calendar-aware text/message integration
  - [x] ~~Configurable time offset (when the watch switches time)~~
  - [x] ~~Configurable languages in one app~~
 

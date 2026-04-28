@@ -23,7 +23,7 @@ function buildConfigUrl(hasColorScreen) {
     "<option value='180'>3:00</option><option value='240'>4:00</option><option value='300'>5:00</option></select></div>" +
     "<div class='row'><label>Greeting display time</label><select id='message_time'>" +
     "<option value='0'>off</option><option value='2'>2 seconds</option><option value='3'>3 seconds</option><option value='4'>4 seconds</option></select></div>" +
-    "<div class='row'><label>Show date on gesture</label><select id='gesture'>" +
+    "<div class='row'><label>Enable backlight on gesture</label><select id='gesture'>" +
     "<option value='0'>Off</option><option value='2'>Flick wrist</option><option value='3'>Shake up/down</option><option value='1'>Boxing move</option><option value='4'>Any shake</option></select></div>" +
     "<div class='row'><label>Connection lost</label><select id='bt'>" +
     "<option value='0'>Off</option><option value='1'>Message only</option><option value='2'>Buzz and message</option></select></div>" +
