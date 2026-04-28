@@ -1,6 +1,6 @@
 {
   "version": "4.0.0",
-  "author": "Harlan Harris and Mattias Backlund",
+  "author": "Harlan Harris",
   "private": true,
   "scripts": {
     "build": "pebble build",
