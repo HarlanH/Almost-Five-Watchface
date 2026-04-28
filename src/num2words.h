@@ -26,6 +26,10 @@ typedef struct {
 	const char* const phrases[12];
 	const char* const greetings[4];
 	const char* const connection_lost;
+	const char* const day_of_month_format;
+	const char* const meeting_now;
+	const char* const meeting_soon;
+	const char* const battery_status_format;
 	const int number_of_exceptions;
 	const Exception exceptions[];
 } Language;
@@ -37,3 +41,11 @@ void time_to_greeting(int hour, char* greeting);
 void set_language(uint8_t language);
 
 void get_connection_lost_message(char* message);
+
+void get_day_of_month_message(int day, char* message, size_t length);
+
+void get_meeting_now_message(char* message, size_t length);
+
+void get_meeting_soon_message(char* message, size_t length);
+
+const char* get_battery_status_format(void);

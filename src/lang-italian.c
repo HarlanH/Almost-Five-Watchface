@@ -67,6 +67,10 @@ const Language LANG_ITALIAN = {
 #else
   .connection_lost = "Dov'è il tuo  tele- fono? ",
 #endif
+  .day_of_month_format = "il %d",
+  .meeting_now = "RIUNIONE ORA!",
+  .meeting_soon = "RIUNIONE PRESTO!",
+  .battery_status_format = "BAT %d%%",
 
     .number_of_exceptions = 0
 };

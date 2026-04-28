@@ -15,11 +15,12 @@ Features
  - The large and easy to read fonts of the original Text Watch
  - Buzz and message when bluetooth connection is lost
  - Top status indicators: bluetooth disconnect and low battery (< 40%)
+- Localized status strings for meeting alerts and low battery text
  - Configurable colors
  - Supports all pebble models up to and including Pebble Time Round
  - Configurable time offset for when each fuzzy phrase changes (offset values are in seconds)
  - Gesture-triggered backlight pulse
- - Bottom fuzzy day-of-month text (for example: "the twenty-eighth")
+- Bottom localized day-of-month text (language-dependent format)
  - Nice staggered animation
  - Between one and four lines of text, depending on need.
  - The text rows are always centered vertically
@@ -67,6 +68,14 @@ Configuration page
 
 The PKJS companion now uses an embedded `data:` URL configuration page, similar to `anylist-pebble`.
 This removes dependency on an external hosted config URL and simplifies emulator/device setup.
+
+Calendar meeting status
+-----------------------
+
+- Add up to three Google Calendar iCal URLs in settings.
+- Events with `TRANSP:TRANSPARENT` or `X-MICROSOFT-CDO-BUSYSTATUS:FREE` are ignored.
+- Meeting status is shown in the top row (`meeting soon` / `meeting now`) and localized with the active watch language.
+- Calendar polling is aligned to real 5-minute boundaries (`:00`, `:05`, `:10`, etc.) with minute boundary status checks to avoid delayed state transitions.
 
 Migration troubleshooting
 -------------------------

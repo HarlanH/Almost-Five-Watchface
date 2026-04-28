@@ -65,6 +65,10 @@ const Language LANG_GERMAN_E = {
 #endif
 
   .connection_lost = "Wo ist dein Handy? ",
+  .day_of_month_format = "der %d",
+  .meeting_now = "TREFFEN JETZT!",
+  .meeting_soon = "TREFFEN BALD!",
+  .battery_status_format = "AKKU %d%%",
 
   .number_of_exceptions = 2,
 

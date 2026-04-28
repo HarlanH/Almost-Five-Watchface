@@ -9,7 +9,9 @@ const {
   parseIcsEvents,
   computeMeetingStatus,
   normalizeCalendarUrl,
-  getCalendarUrls
+  getCalendarUrls,
+  millisUntilNextBoundary,
+  mergeEventsIntoCache
 } = require('../../src/js/pebble-js-app');
 
 test('buildConfigUrl returns embedded data URL', () => {
@@ -113,4 +115,21 @@ test('getCalendarUrls returns up to three normalized calendar URLs', () => {
     'https://calendar.google.com/calendar/ical/one/basic.ics',
     'https://calendar.google.com/calendar/ical/three/basic.ics'
   ]);
+});
+
+test('millisUntilNextBoundary aligns to five-minute marks', () => {
+  var now = new Date(Date.UTC(2026, 3, 28, 16, 49, 10, 500));
+  assert.equal(millisUntilNextBoundary(now, 5), 49500);
+});
+
+test('mergeEventsIntoCache drops duplicates across calendars', () => {
+  var cached = [
+    { start: new Date(Date.UTC(2026, 3, 28, 16, 0, 0)), end: new Date(Date.UTC(2026, 3, 28, 16, 30, 0)) }
+  ];
+  var incoming = [
+    { start: new Date(Date.UTC(2026, 3, 28, 16, 0, 0)), end: new Date(Date.UTC(2026, 3, 28, 16, 30, 0)) },
+    { start: new Date(Date.UTC(2026, 3, 28, 17, 0, 0)), end: new Date(Date.UTC(2026, 3, 28, 17, 30, 0)) }
+  ];
+  var merged = mergeEventsIntoCache(cached, incoming);
+  assert.equal(merged.length, 2);
 });

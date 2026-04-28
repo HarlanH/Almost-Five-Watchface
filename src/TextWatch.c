@@ -91,17 +91,17 @@ void update_status_indicators(void)
 	}
 
 	if (batteryPercent < 40) {
-		snprintf(batteryStatusText, sizeof(batteryStatusText), "BAT %d%%", batteryPercent);
+		snprintf(batteryStatusText, sizeof(batteryStatusText), get_battery_status_format(), batteryPercent);
 	} else {
 		batteryStatusText[0] = '\0';
 	}
 
 	if (meetingStatus == MEETING_STATUS_NOW) {
-		text_layer_set_font(meetingStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
-		snprintf(meetingStatusText, sizeof(meetingStatusText), "MEETING NOW!");
+		text_layer_set_font(meetingStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+		get_meeting_now_message(meetingStatusText, sizeof(meetingStatusText));
 	} else if (meetingStatus == MEETING_STATUS_SOON) {
-		text_layer_set_font(meetingStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_24));
-		snprintf(meetingStatusText, sizeof(meetingStatusText), "MEETING SOON!");
+		text_layer_set_font(meetingStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
+		get_meeting_soon_message(meetingStatusText, sizeof(meetingStatusText));
 	} else {
 		text_layer_set_font(meetingStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
 		meetingStatusText[0] = '\0';
@@ -418,23 +418,7 @@ void time_to_lines(int hours, int minutes, char lines[NUM_LINES][BUFFER_SIZE], c
 
 void day_to_ordinal_words(int day, char *output, size_t length)
 {
-	static const char *ordinals[] = {
-		"",
-		"the first", "the second", "the third", "the fourth", "the fifth",
-		"the sixth", "the seventh", "the eighth", "the ninth", "the tenth",
-		"the eleventh", "the twelfth", "the thirteenth", "the fourteenth", "the fifteenth",
-		"the sixteenth", "the seventeenth", "the eighteenth", "the nineteenth", "the twentieth",
-		"the twenty-first", "the twenty-second", "the twenty-third", "the twenty-fourth", "the twenty-fifth",
-		"the twenty-sixth", "the twenty-seventh", "the twenty-eighth", "the twenty-ninth", "the thirtieth",
-		"the thirty-first"
-	};
-
-	if (day < 1 || day > 31) {
-		output[0] = '\0';
-		return;
-	}
-
-	snprintf(output, length, "%s", ordinals[day]);
+	get_day_of_month_message(day, output, length);
 }
 
 void update_day_of_month_line(struct tm *t, bool force)
@@ -708,7 +692,8 @@ void handle_init() {
 	layer_add_child(window_layer, text_layer_get_layer(btStatusLayer));
 
 	meetingStatusLayer = text_layer_create(GRect(0, 0, xres, STATUS_BAR_HEIGHT));
-	text_layer_set_font(meetingStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
+	// this isn't where the font is set -- look at text_layer_set_font() in meetingStatus branch
+	text_layer_set_font(meetingStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
 	text_layer_set_text_color(meetingStatusLayer, regularTextColor);
 	text_layer_set_background_color(meetingStatusLayer, GColorClear);
 	text_layer_set_text_alignment(meetingStatusLayer, GTextAlignmentCenter);

@@ -6,7 +6,9 @@ var MEETING_STATUS_NONE = 0;
 var MEETING_STATUS_SOON = 1;
 var MEETING_STATUS_NOW = 2;
 var lastMeetingStatus = null;
-var meetingTimer = null;
+var pollTimer = null;
+var statusTimer = null;
+var cachedEvents = [];
 
 function buildConfigUrl(hasColorScreen, initialSettings) {
   var initialSettingsJson = JSON.stringify(initialSettings || {});
@@ -313,6 +315,33 @@ function computeMeetingStatus(events, now, soonMinutes) {
   return MEETING_STATUS_NONE;
 }
 
+function mergeEventsIntoCache(existing, incoming) {
+  var seen = {};
+  var merged = [];
+  var all = (existing || []).concat(incoming || []);
+  for (var i = 0; i < all.length; i++) {
+    var event = all[i];
+    var key = event.start.getTime() + '-' + event.end.getTime();
+    if (!seen[key]) {
+      seen[key] = true;
+      merged.push(event);
+    }
+  }
+  return merged;
+}
+
+function millisUntilNextBoundary(now, minutes) {
+  var intervalMs = minutes * 60 * 1000;
+  var nowMs = now.getTime();
+  var nextMs = Math.ceil(nowMs / intervalMs) * intervalMs;
+  return nextMs - nowMs;
+}
+
+function evaluateAndSendStatus() {
+  var status = computeMeetingStatus(cachedEvents, new Date(), 10);
+  sendMeetingStatus(status);
+}
+
 function sendMeetingStatus(status) {
   if (lastMeetingStatus === status) {
     return;
@@ -336,15 +365,15 @@ function refreshMeetingStatus() {
   }
 
   var pending = icsUrls.length;
-  var combinedEvents = [];
+  var fetchedEvents = [];
 
   function handleDone() {
     pending--;
     if (pending > 0) {
       return;
     }
-    var status = computeMeetingStatus(combinedEvents, new Date(), 10);
-    sendMeetingStatus(status);
+    cachedEvents = mergeEventsIntoCache([], fetchedEvents);
+    evaluateAndSendStatus();
   }
 
   for (var i = 0; i < icsUrls.length; i++) {
@@ -352,7 +381,7 @@ function refreshMeetingStatus() {
       var req = new XMLHttpRequest();
       req.onload = function() {
         if (req.status >= 200 && req.status < 300) {
-          combinedEvents = combinedEvents.concat(parseIcsEvents(req.responseText));
+          fetchedEvents = mergeEventsIntoCache(fetchedEvents, parseIcsEvents(req.responseText));
         } else {
           console.log('ICS request failed with status ' + req.status + ' for ' + url);
         }
@@ -414,19 +443,40 @@ function testCalendarFetch(settings) {
   }
 }
 
-function startMeetingPolling() {
-  if (meetingTimer) {
-    clearInterval(meetingTimer);
+function scheduleAlignedPolling() {
+  if (pollTimer) {
+    clearTimeout(pollTimer);
   }
 
+  var delayMs = millisUntilNextBoundary(new Date(), 5);
+  pollTimer = setTimeout(function() {
+    refreshMeetingStatus();
+    scheduleAlignedPolling();
+  }, delayMs);
+}
+
+function scheduleMinuteStatusChecks() {
+  if (statusTimer) {
+    clearTimeout(statusTimer);
+  }
+
+  var delayMs = millisUntilNextBoundary(new Date(), 1);
+  statusTimer = setTimeout(function() {
+    evaluateAndSendStatus();
+    scheduleMinuteStatusChecks();
+  }, delayMs);
+}
+
+function startMeetingScheduling() {
   refreshMeetingStatus();
-  meetingTimer = setInterval(refreshMeetingStatus, CALENDAR_POLL_INTERVAL_MS);
+  scheduleAlignedPolling();
+  scheduleMinuteStatusChecks();
 }
 
 if (typeof Pebble !== 'undefined') {
   Pebble.addEventListener('ready', function() {
     console.log('PebbleKit JS ready!');
-    startMeetingPolling();
+    startMeetingScheduling();
   });
 
   Pebble.addEventListener('showConfiguration', function() {
@@ -472,6 +522,8 @@ if (typeof module !== 'undefined' && module.exports) {
     parseIcsEvents: parseIcsEvents,
     computeMeetingStatus: computeMeetingStatus,
     normalizeCalendarUrl: normalizeCalendarUrl,
-    getCalendarUrls: getCalendarUrls
+    getCalendarUrls: getCalendarUrls,
+    millisUntilNextBoundary: millisUntilNextBoundary,
+    mergeEventsIntoCache: mergeEventsIntoCache
   };
 }

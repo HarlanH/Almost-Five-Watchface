@@ -63,6 +63,10 @@ const Language LANG_SWEDISH = {
 #endif
 
   .connection_lost = "Var är din telefon ",
+  .day_of_month_format = "den %d",
+  .meeting_now = "MOTE NU!",
+  .meeting_soon = "MOTE SNART!",
+  .battery_status_format = "BAT %d%%",
 
     .number_of_exceptions = 0
 };

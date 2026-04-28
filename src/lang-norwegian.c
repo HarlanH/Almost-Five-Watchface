@@ -70,6 +70,10 @@ const Language LANG_NORWEGIAN = {
   .connection_lost = "Hvor er tele- fonen din? ",
 
 #endif
+  .day_of_month_format = "den %d",
+  .meeting_now = "MOTE NAA!",
+  .meeting_soon = "MOTE SNART!",
+  .battery_status_format = "BAT %d%%",
 
 
     .number_of_exceptions = 0

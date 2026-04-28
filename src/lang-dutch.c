@@ -64,6 +64,10 @@ const Language LANG_DUTCH = {
 	},
 #endif
 	.connection_lost = "Waar  is je tele- foon? ",
+	.day_of_month_format = "de %d",
+	.meeting_now = "VERGADERING NU!",
+	.meeting_soon = "VERGADERING ZO!",
+	.battery_status_format = "BAT %d%%",
 
     .number_of_exceptions = 0
 };
