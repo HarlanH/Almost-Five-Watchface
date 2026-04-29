@@ -1,6 +1,7 @@
 // Watchface config version
 var version = 44;
-var SETTINGS_STORAGE_KEY = 'fuzzy_text_plus_settings';
+var SETTINGS_STORAGE_KEY = 'almost_five_settings';
+var LEGACY_SETTINGS_STORAGE_KEY = 'fuzzy_text_plus_settings';
 var CALENDAR_POLL_INTERVAL_MS = 300000;
 var MEETING_STATUS_NONE = 0;
 var MEETING_STATUS_SOON = 1;
@@ -13,12 +14,12 @@ var cachedEvents = [];
 function buildConfigUrl(hasColorScreen, initialSettings) {
   var initialSettingsJson = JSON.stringify(initialSettings || {});
   var html = "<!doctype html><html><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'>" +
-    "<title>Fuzzy Text Star Settings</title>" +
+    "<title>Almost Five Settings</title>" +
     "<style>body{font-family:Helvetica,Arial,sans-serif;padding:16px;background:#f6f7f8;color:#1f2328}h3{margin-top:0}" +
     "label{display:block;margin:10px 0 6px;font-size:14px}input,select{width:100%;padding:10px;border:1px solid #c8ccd1;border-radius:6px;box-sizing:border-box}" +
     ".row{margin-bottom:10px}.muted{font-size:12px;color:#5a6169}button{margin-top:16px;padding:10px 12px;border:0;border-radius:6px;background:#0b57d0;color:#fff;font-size:15px;width:100%}" +
     ".hidden{display:none}</style></head><body>" +
-    "<h3>Fuzzy Text Star Settings</h3>" +
+    "<h3>Almost Five Settings</h3>" +
     "<div class='row'><label>Language</label><select id='language'>" +
     "<option value='1'>Svenska</option><option value='2'>English (US)</option><option value='11'>English (UK)</option><option value='3'>Norsk</option><option value='4'>Nederlands</option>" +
     "<option value='5'>Italiano</option><option value='6'>Español</option><option value='7'>Deutsch (O)</option><option value='8'>Deutsch (w)</option>" +
@@ -150,6 +151,15 @@ function loadStoredSettings() {
     var raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (raw) {
       return Object.assign({}, defaults, JSON.parse(raw));
+    }
+
+    var legacyRaw = localStorage.getItem(LEGACY_SETTINGS_STORAGE_KEY);
+    if (legacyRaw) {
+      var migrated = Object.assign({}, defaults, JSON.parse(legacyRaw));
+      // Migrate old installs transparently onto the new key.
+      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(migrated));
+      localStorage.removeItem(LEGACY_SETTINGS_STORAGE_KEY);
+      return migrated;
     }
   } catch (err) {
     console.log('Failed to read settings: ' + err);

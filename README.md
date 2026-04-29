@@ -1,5 +1,5 @@
-Fuzzy Text Watch Star
-=====================
+Almost Five
+===========
 
 ## Overview
 
@@ -67,11 +67,13 @@ The companion app uses an embedded `data:` URL for the configuration page, so no
 
 ### Build and install (examples)
 
-- `pebble build` — compile the app; the bundle is written under `build/` (for example `build/Fuzzy-Text-Watch-Plus.pbw`).
+- `pebble build` — compile the app; the bundle is written under `build/` (for example `build/Almost-Five.pbw`).
 - `pebble install --phone 192.168.0.218` — install to a watch on the LAN; replace the IP with your phone’s address (Pebble app must allow developer connection).
 - `pebble install --emulator flint` — install to a running emulator; replace `flint` with your target (for example `basalt`, `chalk`, `aplite`).
 
 To remove build artifacts, run `pebble clean` or delete the `build/` directory.
+
+Temporary maintainer note: PKJS currently migrates settings from the legacy storage key (`fuzzy_text_plus_settings`) to the new key (`almost_five_settings`) for local upgrade compatibility. Remove this migration code later once you no longer need old local settings.
 
 ### Troubleshooting
 

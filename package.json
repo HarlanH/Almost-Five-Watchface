@@ -1,5 +1,5 @@
 {
-  "version": "4.0.0",
+  "version": "1.0.0",
   "author": "Harlan Harris",
   "private": true,
   "scripts": {
@@ -25,7 +25,7 @@
       ]
     },
     "projectType": "native",
-    "uuid": "8873f5fc-ec3c-487a-812b-8de0ae5f7ebe",
+    "uuid": "d410f38b-abb7-41ce-a6de-05c9cb821296",
     "messageKeys": {
       "KEY_LANGUAGE": 4,
       "KEY_MESSAGE_TIME": 6,
@@ -40,7 +40,7 @@
       "KEY_STRICT_HOUR_PHRASES": 10
     },
     "enableMultiJS": false,
-    "displayName": "Fuzzy Text Watch Star",
+    "displayName": "Almost Five",
     "watchapp": {
       "onlyShownOnCommunication": false,
       "hiddenApp": false,
@@ -57,5 +57,5 @@
       "configurable"
     ]
   },
-  "name": "Fuzzy Text Watch Star"
+  "name": "Almost Five"
 }
