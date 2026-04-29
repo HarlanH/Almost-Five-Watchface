@@ -225,9 +225,8 @@ bool needToUpdateLine(Line *line, char *nextValue)
 static GFont font_for_line_format(char format_char, bool compactLayout)
 {
 	if (format_char == 'B') {
-		return compactLayout
-			? fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK)
-			: fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD);
+		(void)compactLayout;
+		return fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD);
 	}
 	if (format_char == 'b') {
 		return fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
@@ -295,7 +294,8 @@ static LineStyleMetrics line_style_metrics(char format_char, bool compactLayout)
 	const LineStyleMetrics GOTHIC_28 = { .frame_h = 32, .line_step = 26 };
 
 	if (format_char == 'B') {
-		return compactLayout ? BITHAM_30_BLACK : BITHAM_42;
+		(void)compactLayout;
+		return BITHAM_42;
 	}
 	if (format_char == 'b') {
 		return BITHAM_30_BLACK;
