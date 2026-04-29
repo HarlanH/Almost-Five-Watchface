@@ -12,6 +12,7 @@
 #define KEY_GESTURE 7
 #define KEY_BT_NOTIFICATION 8
 #define KEY_MEETING_STATUS 9
+#define KEY_STRICT_HOUR_PHRASES 10
 
 // Max number of characters in a line
 #define LINE_LENGTH 9
@@ -24,19 +25,14 @@
 #define NUM_LINES 4
 // Size of text buffer for lines
 #define BUFFER_SIZE (LINE_LENGTH + 2)
-// Vertical distance in pixels between lines
-#define ROW_HEIGHT 50
-// Vertical distance in pixels between lines
-#define ROW_OFFSET 40
-// Vertical distance in pixels between small lines
-#define ROW_OFFSET_SMALL 24
-// Vertical distance in pixels for compact 4-line layout
-#define ROW_OFFSET_COMPACT 28
-
-// Pull top line up by this many pixels
-#define TOP_MARGIN 13
-// Pull line above small line up by this many pixels
-#define TOP_MARGIN_SMALL 5
+// Initial frame height for line TextLayers; configureLayersForText resets per style.
+// Sized to the tallest style (Bitham 42) so allocations are big enough up-front.
+#define ROW_HEIGHT 52
+// Switch from Bitham 42 to compact fonts (Gothic 28 / Bitham 30 Black) at this line count.
+// 3-line phrases at Bitham 42 don't fit the available band on any platform.
+#define COMPACT_LAYOUT_MIN_LINES 3
+// Share of vertical slack placed above the time block (0–100). 50 = centered; lower = less empty top.
+#define TIME_BLOCK_CLUSTER_TOP_SLACK_PERCENT 30
 
 // Text alignment. Can be GTextAlignmentLeft, GTextAlignmentCenter or GTextAlignmentRight
 #define TEXT_ALIGN GTextAlignmentCenter
@@ -86,12 +82,12 @@ void makeAnimationsForLayer(Line *line, int delay);
 void updateLayerText(TextLayer* layer, char* text);
 void updateLineTo(Line *line, char *value, int delay);
 bool needToUpdateLine(Line *line, char *nextValue);
-void configureBoldLayer(TextLayer *textlayer);
 void configureLightLayer(TextLayer *textlayer);
 int configureLayersForText(char text[NUM_LINES][BUFFER_SIZE], char format[]);
 void string_to_lines(char *str, char lines[NUM_LINES][BUFFER_SIZE], char format[]);
-void time_to_lines(int hours, int minutes, char lines[NUM_LINES][BUFFER_SIZE], char format[]);
-void display_message(char *message, int displayTime);
+void time_to_lines(int hours, int minutes, struct tm *raw_local,
+                   char lines[NUM_LINES][BUFFER_SIZE], char format[]);
+void display_message(char *message, int displayTime, bool hide_day_row);
 void display_time(struct tm *t, bool force);
 void checkConnection(time_t *now);
 void handle_tick(struct tm *tick_time, TimeUnits units_changed);
@@ -102,6 +98,7 @@ void set_offset(int offset);
 void set_message_time(int mTime);
 void set_gesture(int gesture);
 void set_bt_lost_notification(int bt_notification);
+void set_strict_hour_phrases(bool enabled);
 void inbox_received_handler(DictionaryIterator *iter, void *context);
 void notify_bt_lost();
 void bt_handler(bool connected);

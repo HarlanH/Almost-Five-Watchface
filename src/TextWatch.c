@@ -35,6 +35,9 @@ GColor8 boldTextColor;
 // 5-minute period we should display
 int timeOffset;
 
+// When true (default), do not show :00 / :30 phrases until local time reaches that point
+static bool strictHourPhrases = true;
+
 // Variale to keep track of the last minute that we updated the time
 // Used to optimise so we only need to run time logic once per minute.
 int lastMinute = -1;
@@ -72,7 +75,13 @@ int yres;
 
 static ConfigMessageContext config_message_context;
 #define STATUS_BAR_HEIGHT 24
-#define DAY_LINE_RESERVED_HEIGHT 30
+// Date row position (original placement — do not change for time-block spacing).
+#define DAY_LINE_ORIGIN_Y_OFFSET 30
+#define DAY_LINE_LAYER_HEIGHT 28
+// Extra vertical gap between the last fuzzy time line and the date row (layout only).
+#define TIME_BLOCK_GAP_ABOVE_DATE 12
+// Bottom inset for configureLayersForText: date strip + breathing room above it.
+#define TIME_BLOCK_BOTTOM_INSET (DAY_LINE_ORIGIN_Y_OFFSET + TIME_BLOCK_GAP_ABOVE_DATE)
 #define TIME_BLOCK_Y_BIAS -2
 
 void backlight_off_handler(void *context)
@@ -212,136 +221,158 @@ bool needToUpdateLine(Line *line, char *nextValue)
 	return false;
 }
 
-// Configure bold line of text
-void configureBoldLayer(TextLayer *textlayer)
+// Font for a line from string_to_lines format + whether we use the 4-line compact style.
+static GFont font_for_line_format(char format_char, bool compactLayout)
 {
-	text_layer_set_font(textlayer, fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD));
-	text_layer_set_text_color(textlayer, boldTextColor);
+	if (format_char == 'B') {
+		return compactLayout
+			? fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK)
+			: fonts_get_system_font(FONT_KEY_BITHAM_42_BOLD);
+	}
+	if (format_char == 'b') {
+		return fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK);
+	}
+	if (format_char == 's') {
+		return fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD);
+	}
+	// normal: ' ' or any other
+	return compactLayout
+		? fonts_get_system_font(FONT_KEY_GOTHIC_28)
+		: fonts_get_system_font(FONT_KEY_BITHAM_42_LIGHT);
+}
+
+static void configure_line_for_format(TextLayer *textlayer, char format_char, bool compactLayout)
+{
+	GFont font = font_for_line_format(format_char, compactLayout);
+	text_layer_set_font(textlayer, font);
+	if (format_char == 'B' || format_char == 'b') {
+		text_layer_set_text_color(textlayer, boldTextColor);
+	} else {
+		text_layer_set_text_color(textlayer, regularTextColor);
+	}
 	text_layer_set_background_color(textlayer, GColorClear);
 	text_layer_set_text_alignment(textlayer, TEXT_ALIGN);
 }
 
-// Configure bold line of text
-void configureSmallBoldLayer(TextLayer *textlayer)
-{
-	text_layer_set_font(textlayer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
-	text_layer_set_text_color(textlayer, boldTextColor);
-	text_layer_set_background_color(textlayer, GColorClear);
-	text_layer_set_text_alignment(textlayer, TEXT_ALIGN);
-}
-
-// Configure compact bold line of text
-void configureCompactBoldLayer(TextLayer *textlayer)
-{
-	text_layer_set_font(textlayer, fonts_get_system_font(FONT_KEY_BITHAM_30_BLACK));
-	text_layer_set_text_color(textlayer, boldTextColor);
-	text_layer_set_background_color(textlayer, GColorClear);
-	text_layer_set_text_alignment(textlayer, TEXT_ALIGN);
-}
-
-// Configure light line of text
+// Default style for new line layers (wide non-compact light)
 void configureLightLayer(TextLayer *textlayer)
 {
-	text_layer_set_font(textlayer, fonts_get_system_font(FONT_KEY_BITHAM_42_LIGHT));
-	text_layer_set_text_color(textlayer, regularTextColor);
-	text_layer_set_background_color(textlayer, GColorClear);
-	text_layer_set_text_alignment(textlayer, TEXT_ALIGN);
+	configure_line_for_format(textlayer, ' ', false);
 }
 
-// Configure small line of text
-void configureSmallLayer(TextLayer *textlayer)
+/*
+ * Per-style geometry for one rendered line.
+ *
+ *   frame_h:   height of the TextLayer frame for this style. Must be >= the font's
+ *              full glyph box (ascender + descender + a pixel or two of safety) so
+ *              the TextLayer never clips a descender. Independent of which glyphs
+ *              actually appear in the line.
+ *
+ *   line_step: y-advance from this line's top to the next line's top. Typically
+ *              smaller than frame_h: the empty space below one line's descender
+ *              can overlap the next line's leading without visual collision,
+ *              which is how lines pack tightly without clipping.
+ *
+ * Values are empirically chosen for the Pebble system fonts. They do not depend
+ * on the text in the line, so the layout is fully deterministic.
+ */
+typedef struct {
+	int frame_h;
+	int line_step;
+} LineStyleMetrics;
+
+static LineStyleMetrics line_style_metrics(char format_char, bool compactLayout)
 {
-	text_layer_set_font(textlayer, fonts_get_system_font(FONT_KEY_GOTHIC_28_BOLD));
-	text_layer_set_text_color(textlayer, regularTextColor);
-	text_layer_set_background_color(textlayer, GColorClear);
-	text_layer_set_text_alignment(textlayer, TEXT_ALIGN);
+	// Bitham 42 (Light/Bold): cap+desc ~= 50 px; 52 px frame leaves headroom.
+	// 44 px step gives a tight but readable two-line block.
+	const LineStyleMetrics BITHAM_42 = { .frame_h = 52, .line_step = 44 };
+
+	// Bitham 30 Black: full glyph box ~= 34 px; 36 frame, 30 step.
+	const LineStyleMetrics BITHAM_30_BLACK = { .frame_h = 36, .line_step = 30 };
+
+	// Gothic 28 (Regular/Bold): full glyph box ~= 30 px; 32 frame, 26 step.
+	// Step is intentionally tight so 4-line layouts fit the available band.
+	const LineStyleMetrics GOTHIC_28 = { .frame_h = 32, .line_step = 26 };
+
+	if (format_char == 'B') {
+		return compactLayout ? BITHAM_30_BLACK : BITHAM_42;
+	}
+	if (format_char == 'b') {
+		return BITHAM_30_BLACK;
+	}
+	if (format_char == 's') {
+		return GOTHIC_28;
+	}
+	return compactLayout ? GOTHIC_28 : BITHAM_42;
 }
 
-// Configure compact line of text
-void configureCompactLayer(TextLayer *textlayer)
-{
-	text_layer_set_font(textlayer, fonts_get_system_font(FONT_KEY_GOTHIC_28));
-	text_layer_set_text_color(textlayer, regularTextColor);
-	text_layer_set_background_color(textlayer, GColorClear);
-	text_layer_set_text_alignment(textlayer, TEXT_ALIGN);
-}
-
-// Configure the layers for the given text
+/*
+ * Configure the line layers for the given text and return the number of lines used.
+ *
+ * Algorithm:
+ *   1. Count non-empty lines; pick the compact font set when there are 3+ lines
+ *      (Bitham 42 doesn't fit 3 stacked lines on any platform).
+ *   2. For each line, look up its (frame_h, line_step) from the metrics table.
+ *      No runtime text measurement; same input always produces the same output.
+ *   3. Block height = sum of line_steps + the last line's frame_h. Center the
+ *      block in the band between the status bar and the day-of-month strip,
+ *      biased slightly upward via TIME_BLOCK_CLUSTER_TOP_SLACK_PERCENT.
+ *   4. Place each line at ypos with its frame_h; advance ypos by line_step.
+ *
+ * Because frame_h is always >= the font's full glyph box, TextLayer cannot clip
+ * a descender no matter what string lands in the line.
+ */
 int configureLayersForText(char text[NUM_LINES][BUFFER_SIZE], char format[])
 {
 	int numLines = 0;
-	int height = 0;
-	int offsets[4];
-	bool compactLayout = false;
-
-	// Count lines first so we can choose a compact style for 4-row layouts.
 	for (int i = 0; i < NUM_LINES; i++) {
 		if (strlen(text[i]) == 0) {
 			break;
 		}
 		numLines++;
 	}
-	compactLayout = (numLines == NUM_LINES);
-
-	// Set bold layer.
-	int i;
-	for (i = 0; i < numLines; i++) {
-		if (strlen(text[i]) == 0) {
-			break;
-		}
-
-		offsets[i] = compactLayout ? ROW_OFFSET_COMPACT : ROW_OFFSET;
-		if (format[i] == 'B') // Bold
-		{
-			if (compactLayout) {
-				configureCompactBoldLayer(lines[i].nextLayer);
-			} else {
-				configureBoldLayer(lines[i].nextLayer);
-			}
-		}
-		else if (format[i] == 'b') // Small bold
-		{
-			configureSmallBoldLayer(lines[i].nextLayer);
-			offsets[i] = ROW_OFFSET_SMALL;
-			// If there is a line above, increase its offset a bit 
-			if (i > 0) {
-				offsets[i - 1] += TOP_MARGIN_SMALL;
-				height += TOP_MARGIN_SMALL;
-			}
-		}
-		else if (format[i] == 's') // Small
-		{
-			configureSmallLayer(lines[i].nextLayer);
-			offsets[i] = ROW_OFFSET_SMALL;
-			// If there is a line above, increase its offset a bit 
-			if (i > 0) {
-				offsets[i - 1] += TOP_MARGIN_SMALL;
-				height += TOP_MARGIN_SMALL;
-			}
-		}
-		else // Normal line
-		{
-			if (compactLayout) {
-				configureCompactLayer(lines[i].nextLayer);
-			} else {
-				configureLightLayer(lines[i].nextLayer);
-			}
-		}
-		height += offsets[i];
+	if (numLines == 0) {
+		return 0;
 	}
-	numLines = i;
 
-	// Center the animated time block between top status and bottom day lines.
+	bool compactLayout = (numLines >= COMPACT_LAYOUT_MIN_LINES);
+
+	LineStyleMetrics styles[NUM_LINES];
+	int block_h = 0;
+	for (int i = 0; i < numLines; i++) {
+		configure_line_for_format(lines[i].nextLayer, format[i], compactLayout);
+		styles[i] = line_style_metrics(format[i], compactLayout);
+		block_h += (i == numLines - 1) ? styles[i].frame_h : styles[i].line_step;
+	}
+
 	int topInset = STATUS_BAR_HEIGHT + 2;
-	int bottomInset = DAY_LINE_RESERVED_HEIGHT;
+	int bottomInset = TIME_BLOCK_BOTTOM_INSET;
 	int availableHeight = yres - topInset - bottomInset;
-	int ypos = topInset + (availableHeight - height) / 2 + TIME_BLOCK_Y_BIAS;
 
-	// Set y positions for the lines
-	for (int i = 0; i < numLines; i++)
-	{
-		layer_set_frame((Layer *)lines[i].nextLayer, GRect(xres, ypos, xres, ROW_HEIGHT));
-		ypos += offsets[i];
+	int slack = availableHeight - block_h;
+	int ypos;
+	if (slack > 0) {
+		int top_slack = (slack * TIME_BLOCK_CLUSTER_TOP_SLACK_PERCENT) / 100;
+		ypos = topInset + TIME_BLOCK_Y_BIAS + top_slack;
+	} else {
+		// Block taller than the band (4-line edge case): hug the top inset and
+		// let the natural line_step values keep the bottom line clear of the date row.
+		ypos = topInset + TIME_BLOCK_Y_BIAS + slack / 2;
+		if (ypos < topInset) {
+			ypos = topInset;
+		}
+	}
+
+	for (int j = 0; j < numLines; j++) {
+		// Visible line at x=0; spare buffer off the right (x=xres). The two
+		// TextLayers swap roles each tick to drive the slide-in/out animation.
+		GRect visible = GRect(0, ypos, xres, styles[j].frame_h);
+		GRect off_right = GRect(xres, ypos, xres, styles[j].frame_h);
+		layer_set_frame((Layer *)lines[j].currentLayer, visible);
+		layer_set_frame((Layer *)lines[j].nextLayer, off_right);
+		if (j < numLines - 1) {
+			ypos += styles[j].line_step;
+		}
 	}
 
 	return numLines;
@@ -407,12 +438,13 @@ void string_to_lines(char *str, char lines[NUM_LINES][BUFFER_SIZE], char format[
 	}
 }
 
-void time_to_lines(int hours, int minutes, char lines[NUM_LINES][BUFFER_SIZE], char format[])
+void time_to_lines(int hours, int minutes, struct tm *raw_local,
+                   char lines[NUM_LINES][BUFFER_SIZE], char format[])
 {
 	int length = NUM_LINES * BUFFER_SIZE + 1;
 	char timeStr[length];
-	time_to_words(hours, minutes, timeStr, length);
-	
+	time_to_words(hours, minutes, timeStr, length, strictHourPhrases, raw_local);
+
 	string_to_lines(timeStr, lines, format);
 }
 
@@ -433,7 +465,7 @@ void update_day_of_month_line(struct tm *t, bool force)
 }
 
 // Update screen based on new time
-void display_message(char *message, int displayTime)
+void display_message(char *message, int displayTime, bool hide_day_row)
 {
 	if (displayTime > 0 && resetMessageTime == 0) {
 		// The current time text will be stored in the following strings
@@ -452,6 +484,8 @@ void display_message(char *message, int displayTime)
 		
 		currentNLines = nextNLines;
 
+		layer_set_hidden(text_layer_get_layer(dayOfMonthLayer), hide_day_row);
+
 		time(&resetMessageTime);
 		resetMessageTime += displayTime;
 	}
@@ -464,27 +498,29 @@ void display_time(struct tm *t, bool force)
 		return;
 	}
 
-	time_t timestamp = mktime(t);
+	struct tm raw_tm = *t;
+	time_t timestamp = mktime(&raw_tm);
 	timestamp += timeOffset; // Add offset time
-	t = localtime(&timestamp);
+	struct tm *adj_ptr = localtime(&timestamp);
+	struct tm adj_tm = *adj_ptr;
 
 #if DEBUG == 0
-	if (lastMinute == t->tm_min && !force) { // No change in time
+	if (lastMinute == adj_tm.tm_min && !force) { // No change in time
 		return;
 	}
 #endif
 
 	// Mark this minute as checked;
-	lastMinute = t->tm_min;
+	lastMinute = adj_tm.tm_min;
 
 	// The current time text will be stored in the following strings
 	char textLine[NUM_LINES][BUFFER_SIZE];
 	char format[NUM_LINES];
 
 #if DEBUG == 1
-	time_to_lines(t->tm_hour, t->tm_sec, textLine, format);
+	time_to_lines(adj_tm.tm_hour, adj_tm.tm_sec, NULL, textLine, format);
 #else
-	time_to_lines(t->tm_hour, t->tm_min, textLine, format);
+	time_to_lines(adj_tm.tm_hour, adj_tm.tm_min, &raw_tm, textLine, format);
 #endif
 	
 	int nextNLines = configureLayersForText(textLine, format);
@@ -542,6 +578,7 @@ void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
   	if (now >= resetMessageTime) {
   		resetMessageTime = 0;
   		force = true;
+  		layer_set_hidden(text_layer_get_layer(dayOfMonthLayer), false);
   	}
   }
 
@@ -603,6 +640,10 @@ void set_bt_lost_notification(int bt_notification) {
 	bt_lost_notification = bt_notification;
 }
 
+void set_strict_hour_phrases(bool enabled) {
+	strictHourPhrases = enabled;
+}
+
 void set_meeting_status(int status) {
 	if (status < MEETING_STATUS_NONE || status > MEETING_STATUS_NOW) {
 		return;
@@ -628,7 +669,7 @@ void notify_bt_lost() {
 		light_enable_interaction();
 		char message[48];
 		get_connection_lost_message(message);
-		display_message(message, BT_LOST_DISPLAY_TIME);	
+		display_message(message, BT_LOST_DISPLAY_TIME, false);
 	}
 }
 
@@ -666,6 +707,7 @@ void handle_init() {
 	config_message_context.set_message_time = set_message_time;
 	config_message_context.set_gesture = set_gesture;
 	config_message_context.set_bt_lost_notification = set_bt_lost_notification;
+	config_message_context.set_strict_hour_phrases = set_strict_hour_phrases;
 	config_message_context.refresh_time = refresh_time;
 
 	Layer *window_layer = window_get_root_layer(window);
@@ -673,7 +715,8 @@ void handle_init() {
     xres = window_bounds.size.w;
     yres = window_bounds.size.h;
 
-	dayOfMonthLayer = text_layer_create(GRect(0, yres - 30, xres, 28));
+	dayOfMonthLayer = text_layer_create(
+		GRect(0, yres - DAY_LINE_ORIGIN_Y_OFFSET, xres, DAY_LINE_LAYER_HEIGHT));
 	text_layer_set_font(dayOfMonthLayer, fonts_get_system_font(FONT_KEY_GOTHIC_24));
 	text_layer_set_text_color(dayOfMonthLayer, regularTextColor);
 	text_layer_set_background_color(dayOfMonthLayer, GColorClear);
@@ -731,7 +774,7 @@ void handle_init() {
 	time_to_greeting(get_localtime()->tm_sec * 24 / 60, greeting);
 #endif
 	if (messageTime > 0) {
-		display_message(greeting, messageTime);
+		display_message(greeting, messageTime, true);
 	} else {
 		refresh_time();
 	}
