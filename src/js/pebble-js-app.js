@@ -1,7 +1,6 @@
 // Watchface config version
 var version = 44;
 var SETTINGS_STORAGE_KEY = 'almost_five_settings';
-var LEGACY_SETTINGS_STORAGE_KEY = 'fuzzy_text_plus_settings';
 var CALENDAR_POLL_INTERVAL_MS = 300000;
 var MEETING_STATUS_NONE = 0;
 var MEETING_STATUS_SOON = 1;
@@ -151,15 +150,6 @@ function loadStoredSettings() {
     var raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
     if (raw) {
       return Object.assign({}, defaults, JSON.parse(raw));
-    }
-
-    var legacyRaw = localStorage.getItem(LEGACY_SETTINGS_STORAGE_KEY);
-    if (legacyRaw) {
-      var migrated = Object.assign({}, defaults, JSON.parse(legacyRaw));
-      // Migrate old installs transparently onto the new key.
-      localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(migrated));
-      localStorage.removeItem(LEGACY_SETTINGS_STORAGE_KEY);
-      return migrated;
     }
   } catch (err) {
     console.log('Failed to read settings: ' + err);

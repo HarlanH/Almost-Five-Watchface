@@ -73,8 +73,6 @@ The companion app uses an embedded `data:` URL for the configuration page, so no
 
 To remove build artifacts, run `pebble clean` or delete the `build/` directory.
 
-Temporary maintainer note: PKJS currently migrates settings from the legacy storage key (`fuzzy_text_plus_settings`) to the new key (`almost_five_settings`) for local upgrade compatibility. Remove this migration code later once you no longer need old local settings.
-
 ### Troubleshooting
 
 - If `pebble build` fails because `pebble` is missing, install or re-link your Pebble/Rebble SDK tooling.
