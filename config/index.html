@@ -22,7 +22,8 @@
       .offset-config,
       .message-time-config,
       .gesture-config,
-      .bt-lost-config
+      .bt-lost-config,
+      .strict-hour-config
       {
         display: none;
       }
@@ -164,6 +165,18 @@
       </div>
     </div>
 
+    <div class='item-container strict-hour-config'>
+      <div class='item-container-content'>
+        <label class='item'>
+          Wait for real :00 and :30
+          <input id='strict_hour_phrases_checkbox' type='checkbox' class='item-toggle' checked>
+        </label>
+      </div>
+      <div class='item-container-footer'>
+        When enabled (default), “o'clock” and “half past” only appear after the real clock reaches that time, so the time offset cannot show those phrases early.
+      </div>
+    </div>
+
     <div class='item-container message-time-config'>
       <div class='item-container-content'>
         <label class='item'>
@@ -202,6 +215,7 @@
     var messageTime = document.getElementById('message_time_choice');
     var gesture = document.getElementById('gesture_choice');
     var btLostNotification = document.getElementById('bt_choice');
+    var strictHourPhrases = document.getElementById('strict_hour_phrases_checkbox');
 
     var options = {
       'inverse_colors': inverseColorCheckbox.checked,
@@ -212,7 +226,8 @@
       'offset': offsetChoice.value,
       'message_time': messageTime.value,
       'gesture': gesture.value,
-      'bt_notification': btLostNotification.value
+      'bt_notification': btLostNotification.value,
+      'strict_hour_phrases': !strictHourPhrases || strictHourPhrases.checked
     };
 
     // Save for next launch
@@ -225,6 +240,7 @@
     localStorage['message_time'] = options['message_time'];
     localStorage['gesture'] = options['gesture'];
     localStorage['bt_notification'] = options['bt_notification'];
+    localStorage['strict_hour_phrases'] = JSON.stringify(options['strict_hour_phrases']);
 
     console.log('Got options: ' + JSON.stringify(options));
     return options;
@@ -324,6 +340,9 @@
         Array.prototype.push.apply(selected_configs, document.getElementsByClassName("gesture-config"));
         Array.prototype.push.apply(selected_configs, document.getElementsByClassName("bt-lost-config"));
       }
+      if (version >= 44) {
+        Array.prototype.push.apply(selected_configs, document.getElementsByClassName("strict-hour-config"));
+      }
     }
 
     // Make all available options visible
@@ -355,6 +374,9 @@
     if(localStorage['message_time']) messageTime.value = localStorage['message_time'];
     if(localStorage['gesture']) gesture.value = localStorage['gesture'];
     if(localStorage['bt_notification']) btLostNotification.value = localStorage['bt_notification'];
+    if (localStorage['strict_hour_phrases'] !== undefined) {
+      document.getElementById('strict_hour_phrases_checkbox').checked = JSON.parse(localStorage['strict_hour_phrases']);
+    }
 
   })();
   </script>

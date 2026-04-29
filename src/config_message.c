@@ -36,6 +36,14 @@ static void handle_shared_settings(DictionaryIterator *iter, const ConfigMessage
     persist_write_int(KEY_BT_NOTIFICATION, bt_notification_t->value->uint8);
     APP_LOG(APP_LOG_LEVEL_DEBUG, "BT notification is %d", bt_notification_t->value->uint8);
   }
+
+  Tuple *strict_hour_t = dict_find(iter, KEY_STRICT_HOUR_PHRASES);
+  if (strict_hour_t) {
+    bool strict = strict_hour_t->value->uint8 != 0;
+    ctx->set_strict_hour_phrases(strict);
+    persist_write_bool(KEY_STRICT_HOUR_PHRASES, strict);
+    APP_LOG(APP_LOG_LEVEL_DEBUG, "Strict hour phrases is %d", strict ? 1 : 0);
+  }
 }
 
 void config_message_handle_inbox(DictionaryIterator *iter, const ConfigMessageContext *ctx) {
@@ -98,6 +106,11 @@ void config_message_read_persisted_state(const ConfigMessageContext *ctx) {
   }
   if (persist_exists(KEY_BT_NOTIFICATION)) {
     ctx->set_bt_lost_notification(persist_read_int(KEY_BT_NOTIFICATION));
+  }
+  if (persist_exists(KEY_STRICT_HOUR_PHRASES)) {
+    ctx->set_strict_hour_phrases(persist_read_bool(KEY_STRICT_HOUR_PHRASES));
+  } else {
+    ctx->set_strict_hour_phrases(true);
   }
 
   GColor8 background_color;

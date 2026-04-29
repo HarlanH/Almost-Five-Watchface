@@ -11,6 +11,7 @@ typedef struct {
   void (*set_message_time)(int message_time);
   void (*set_gesture)(int gesture);
   void (*set_bt_lost_notification)(int bt_notification);
+  void (*set_strict_hour_phrases)(bool enabled);
   void (*refresh_time)(void);
 } ConfigMessageContext;
 

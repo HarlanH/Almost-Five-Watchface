@@ -62,6 +62,12 @@ test('configDataToDict maps app settings keys', () => {
   assert.equal(dict.KEY_MESSAGE_TIME, 3);
   assert.equal(dict.KEY_GESTURE, 4);
   assert.equal(dict.KEY_BT_NOTIFICATION, 2);
+  assert.equal(dict.KEY_STRICT_HOUR_PHRASES, 1);
+});
+
+test('configDataToDict maps strict hour phrases off', () => {
+  const dict = configDataToDict({ strict_hour_phrases: false });
+  assert.equal(dict.KEY_STRICT_HOUR_PHRASES, 0);
 });
 
 test('configDataToDict supports new language identifiers', () => {

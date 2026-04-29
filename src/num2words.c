@@ -109,20 +109,27 @@ void check_exceptions(int hours, int pentaminutes, char* words, size_t length) {
   }
 }
 
-void time_to_words(int hours, int minutes, char* words, size_t length) {
+// First five-minute bucket of the hour ("… o'clock")
+static bool raw_in_oclock_window(struct tm *raw, int hour_adj) {
+  return raw->tm_hour == hour_adj && raw->tm_min < 5;
+}
 
+// Bucket for "… thirty" (half past)
+static bool raw_in_half_window(struct tm *raw, int hour_adj) {
+  return raw->tm_hour == hour_adj && raw->tm_min >= 30 && raw->tm_min < 35;
+}
+
+static void time_to_words_impl(int hours, int minutes, char* words, size_t length) {
   memset(words, 0, length);
 
-  // Fuzzy time
   int fiveMinutePeriod = (minutes / 5) % 12;
 
   check_exceptions(hours, fiveMinutePeriod, words, length);
 
   if (*words == '\0') {
-    // No exception
-    char phrase[length]; 
+    char phrase[length];
     strcpy(phrase, getFiveMinutePhrase(fiveMinutePeriod));
-   
+
     char *variable = NULL;
     const char *hour;
 
@@ -134,7 +141,6 @@ void time_to_words(int hours, int minutes, char* words, size_t length) {
     }
 
     if (variable != NULL) {
-      // Substitute '$x' with '%s'
       *variable = '%';
       *(variable + 1) = 's';
       snprintf(words, length, phrase, hour);
@@ -142,6 +148,28 @@ void time_to_words(int hours, int minutes, char* words, size_t length) {
       strncpy(words, phrase, length);
     }
   }
+}
+
+void time_to_words(int hours, int minutes, char* words, size_t length,
+                   bool strict_hour_phrases, struct tm *raw_local) {
+  int fiveMinutePeriod = (minutes / 5) % 12;
+
+  if (strict_hour_phrases && raw_local != NULL) {
+    if (fiveMinutePeriod == 0 && !raw_in_oclock_window(raw_local, hours)) {
+      int h = hours - 1;
+      if (h < 0) {
+        h += 24;
+      }
+      time_to_words_impl(h, 55, words, length);
+      return;
+    }
+    if (fiveMinutePeriod == 6 && !raw_in_half_window(raw_local, hours)) {
+      time_to_words_impl(hours, 25, words, length);
+      return;
+    }
+  }
+
+  time_to_words_impl(hours, minutes, words, length);
 }
 
 void time_to_greeting(int hour, char* greeting)

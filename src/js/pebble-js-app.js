@@ -1,5 +1,5 @@
 // Watchface config version
-var version = 43;
+var version = 44;
 var SETTINGS_STORAGE_KEY = 'fuzzy_text_plus_settings';
 var CALENDAR_POLL_INTERVAL_MS = 300000;
 var MEETING_STATUS_NONE = 0;
@@ -38,6 +38,8 @@ function buildConfigUrl(hasColorScreen, initialSettings) {
     "<option value='0'>Off</option><option value='2'>Flick wrist</option><option value='3'>Shake up/down</option><option value='1'>Boxing move</option><option value='4'>Any shake</option></select></div>" +
     "<div class='row'><label>Connection lost</label><select id='bt'>" +
     "<option value='0'>Off</option><option value='1'>Message only</option><option value='2'>Buzz and message</option></select></div>" +
+    "<div class='row'><label><input id='strict_hour' type='checkbox' checked> Wait for real :00 and :30</label></div>" +
+    "<p class='muted'>When on, “o'clock” and “half past” only appear after the real clock reaches that time (time offset can no longer pull those phrases early).</p>" +
     "<div class='row'><label>Google Calendar iCal URL 1</label><input id='calendar_ics_1' type='text' placeholder='https://.../basic.ics'></div>" +
     "<div class='row'><label>Google Calendar iCal URL 2</label><input id='calendar_ics_2' type='text' placeholder='https://.../basic.ics'></div>" +
     "<div class='row'><label>Google Calendar iCal URL 3</label><input id='calendar_ics_3' type='text' placeholder='https://.../basic.ics'></div>" +
@@ -46,7 +48,7 @@ function buildConfigUrl(hasColorScreen, initialSettings) {
     "<button id='save'>Save</button><p class='muted'>Version: " + version + "</p>" +
     "<script>(function(){var hasColor=" + (hasColorScreen ? "true" : "false") + ";" +
     "var initialSettings=" + initialSettingsJson + ";" +
-    "var defaults={inverse_colors:false,background_color:'0x000000',regular_color:'0xFFFFFF',bold_color:'0xFFFFFF',language:'2',offset:'180',message_time:'3',gesture:'4',bt_notification:'2',calendar_ics_1:'',calendar_ics_2:'',calendar_ics_3:''};" +
+    "var defaults={inverse_colors:false,background_color:'0x000000',regular_color:'0xFFFFFF',bold_color:'0xFFFFFF',language:'2',offset:'180',message_time:'3',gesture:'4',bt_notification:'2',strict_hour_phrases:true,calendar_ics_1:'',calendar_ics_2:'',calendar_ics_3:''};" +
     "function normUrl(url){var trimmed=String(url||'').trim();if(trimmed.indexOf('webcal://')===0){return 'https://'+trimmed.substring('webcal://'.length);}return trimmed;}" +
     "function load(){try{var raw=localStorage.getItem('" + SETTINGS_STORAGE_KEY + "');if(raw){return Object.assign({},defaults,initialSettings,JSON.parse(raw));}}catch(e){}return Object.assign({},defaults,initialSettings);}" +
     "function save(v){try{localStorage.setItem('" + SETTINGS_STORAGE_KEY + "',JSON.stringify(v));}catch(e){}}" +
@@ -61,11 +63,12 @@ function buildConfigUrl(hasColorScreen, initialSettings) {
     "document.getElementById('message_time').value=String(state.message_time||'3');" +
     "document.getElementById('gesture').value=String(state.gesture||'4');" +
     "document.getElementById('bt').value=String(state.bt_notification||'2');" +
+    "document.getElementById('strict_hour').checked=state.strict_hour_phrases!==false;" +
     "document.getElementById('calendar_ics_1').value=String(state.calendar_ics_1||state.calendar_ics||'');" +
     "document.getElementById('calendar_ics_2').value=String(state.calendar_ics_2||'');" +
     "document.getElementById('calendar_ics_3').value=String(state.calendar_ics_3||'');" +
-    "document.getElementById('test_fetch').addEventListener('click',function(){var out={inverse_colors:document.getElementById('inverse').checked,background_color:document.getElementById('background').value,regular_color:document.getElementById('regular').value,bold_color:document.getElementById('bold').value,language:document.getElementById('language').value,offset:document.getElementById('offset').value,message_time:document.getElementById('message_time').value,gesture:document.getElementById('gesture').value,bt_notification:document.getElementById('bt').value,calendar_ics_1:normUrl(document.getElementById('calendar_ics_1').value),calendar_ics_2:normUrl(document.getElementById('calendar_ics_2').value),calendar_ics_3:normUrl(document.getElementById('calendar_ics_3').value),test_fetch:'1'};save(out);document.location='pebblejs://close#'+encodeURIComponent(JSON.stringify(out));});" +
-    "document.getElementById('save').addEventListener('click',function(){var out={inverse_colors:document.getElementById('inverse').checked,background_color:document.getElementById('background').value,regular_color:document.getElementById('regular').value,bold_color:document.getElementById('bold').value,language:document.getElementById('language').value,offset:document.getElementById('offset').value,message_time:document.getElementById('message_time').value,gesture:document.getElementById('gesture').value,bt_notification:document.getElementById('bt').value,calendar_ics_1:normUrl(document.getElementById('calendar_ics_1').value),calendar_ics_2:normUrl(document.getElementById('calendar_ics_2').value),calendar_ics_3:normUrl(document.getElementById('calendar_ics_3').value)};save(out);document.location='pebblejs://close#'+encodeURIComponent(JSON.stringify(out));});})();</script>" +
+    "document.getElementById('test_fetch').addEventListener('click',function(){var out={inverse_colors:document.getElementById('inverse').checked,background_color:document.getElementById('background').value,regular_color:document.getElementById('regular').value,bold_color:document.getElementById('bold').value,language:document.getElementById('language').value,offset:document.getElementById('offset').value,message_time:document.getElementById('message_time').value,gesture:document.getElementById('gesture').value,bt_notification:document.getElementById('bt').value,strict_hour_phrases:document.getElementById('strict_hour').checked,calendar_ics_1:normUrl(document.getElementById('calendar_ics_1').value),calendar_ics_2:normUrl(document.getElementById('calendar_ics_2').value),calendar_ics_3:normUrl(document.getElementById('calendar_ics_3').value),test_fetch:'1'};save(out);document.location='pebblejs://close#'+encodeURIComponent(JSON.stringify(out));});" +
+    "document.getElementById('save').addEventListener('click',function(){var out={inverse_colors:document.getElementById('inverse').checked,background_color:document.getElementById('background').value,regular_color:document.getElementById('regular').value,bold_color:document.getElementById('bold').value,language:document.getElementById('language').value,offset:document.getElementById('offset').value,message_time:document.getElementById('message_time').value,gesture:document.getElementById('gesture').value,bt_notification:document.getElementById('bt').value,strict_hour_phrases:document.getElementById('strict_hour').checked,calendar_ics_1:normUrl(document.getElementById('calendar_ics_1').value),calendar_ics_2:normUrl(document.getElementById('calendar_ics_2').value),calendar_ics_3:normUrl(document.getElementById('calendar_ics_3').value)};save(out);document.location='pebblejs://close#'+encodeURIComponent(JSON.stringify(out));});})();</script>" +
     "</body></html>";
 
   return 'data:text/html;charset=utf-8,' + encodeURIComponent(html);
@@ -98,6 +101,8 @@ function configDataToDict(configData) {
 
   var btNotification = configData.bt_notification;
   if (btNotification !== undefined) dict.KEY_BT_NOTIFICATION = parseInt(btNotification, 10);
+
+  dict.KEY_STRICT_HOUR_PHRASES = configData.strict_hour_phrases !== false ? 1 : 0;
 
   return dict;
 }

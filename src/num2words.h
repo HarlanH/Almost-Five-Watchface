@@ -1,5 +1,6 @@
 #pragma once
 #include <pebble.h>
+#include <stdbool.h>
 #include "string.h"
 
 #define LANG_SE 1
@@ -37,7 +38,8 @@ typedef struct {
 	const Exception exceptions[];
 } Language;
 
-void time_to_words(int hours, int minutes, char* words, size_t length);
+void time_to_words(int hours, int minutes, char* words, size_t length,
+                   bool strict_hour_phrases, struct tm *raw_local);
 
 void time_to_greeting(int hour, char* greeting);
 
