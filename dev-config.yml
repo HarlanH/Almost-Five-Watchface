@@ -1,5 +1,5 @@
-language: 10
-offset: 180
+language: 2
+offset: 0
 message_time: 3
 gesture: 4
 bt_notification: 2

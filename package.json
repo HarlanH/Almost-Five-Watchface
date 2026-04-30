@@ -19,12 +19,6 @@
     "sdkVersion": "3",
     "resources": {
       "media": [
-        {
-          "menuIcon": true,
-          "type": "bitmap",
-          "name": "IMAGE_MENU_ICON",
-          "file": "icons/menu_icon.png"
-        }
       ]
     },
     "projectType": "native",
