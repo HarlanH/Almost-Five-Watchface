@@ -37,6 +37,15 @@ and other small changes.
 
 This watchface is available on the Pebble App store as (pending).
 
+### Screenshots
+
+| Platform | Preview |
+|---|---|
+| Aplite (English) | ![Aplite screenshot](screenshots/aplite-en-almost9-bat.png) |
+| Basalt (English) | ![Basalt screenshot](screenshots/basalt-en-905.png) |
+| Diorite (English) | ![Diorite screenshot](screenshots/diorite-en-940-nobt.png) |
+| Flint (Japanese) | ![Flint screenshot](screenshots/flint-jp-1005.png) |
+
 ### Settings
 
 Open this watch face’s settings in the Pebble / Rebble app to change appearance, language, time offset, backlight-on-gesture behavior, Bluetooth disconnect alerts, and Google Calendar iCal URLs.
@@ -72,6 +81,19 @@ The companion app uses an embedded `data:` URL for the configuration page, so no
 - `pebble install --emulator flint` — install to a running emulator; replace `flint` with your target (for example `basalt`, `chalk`, `aplite`).
 
 To remove build artifacts, run `pebble clean` or delete the `build/` directory.
+
+### Local emulator config (YAML, no config webview)
+
+The emulator config webview callback can be unreliable on some platforms. For local iteration, this repo includes a YAML-driven path that sends settings directly as AppMessage tuples (bypassing HTML/webview callbacks).
+
+1. Edit `dev-config.yml` with the values you want (for example `language`, `offset`, `message_time`, `gesture`, `bt_notification`, `strict_hour_phrases`).
+2. Install/run the watchface on your emulator target.
+3. Apply settings:
+   - `npm run emu:apply-config -- --emulator flint`
+
+This command reads `dev-config.yml`, maps values to the app's message keys from `package.json`, and sends them directly to the running watch app over the Pebble transport.
+
+Current limitation: this direct local config flow is not yet reliable on every supported emulator platform. If one platform fails to connect or apply, try another target (for example `flint`) for settings iteration, or use phone-side config for final validation.
 
 ### Troubleshooting
 
