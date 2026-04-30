@@ -121,6 +121,14 @@ void update_status_indicators(void)
 	text_layer_set_text(batteryStatusLayer, batteryStatusText);
 }
 
+static void apply_current_palette_to_layers(void)
+{
+	text_layer_set_text_color(dayOfMonthLayer, regularTextColor);
+	text_layer_set_text_color(btStatusLayer, regularTextColor);
+	text_layer_set_text_color(meetingStatusLayer, regularTextColor);
+	text_layer_set_text_color(batteryStatusLayer, regularTextColor);
+}
+
 // UTF8 aware strlen() for a sequence of bytes
 int strlenUtf8(char *start, char *end) 
 {
@@ -616,6 +624,8 @@ struct tm *get_localtime()
 }
 
 void refresh_time() {
+	apply_current_palette_to_layers();
+	update_status_indicators();
 	update_day_of_month_line(get_localtime(), true);
 	display_time(get_localtime(), true);
 }

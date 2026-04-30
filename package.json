@@ -5,10 +5,13 @@
   "scripts": {
     "build": "pebble build",
     "clean": "pebble clean",
-    "test:js": "node --test test/pkjs/**/*.test.js",
-    "test": "npm run test:js"
+    "test:js": "node --test test/**/*.test.js",
+    "test": "npm run test:js",
+    "emu:apply-config": "node scripts/emu-apply-config.js"
   },
-  "dependencies": {},
+  "dependencies": {
+    "yaml": "^2.8.3"
+  },
   "keywords": [
     "pebble-app"
   ],
@@ -49,9 +52,8 @@
     "targetPlatforms": [
       "aplite",
       "basalt",
-      "chalk",
       "diorite",
-      "emery"
+      "flint"
     ],
     "capabilities": [
       "configurable"
