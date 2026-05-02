@@ -2,12 +2,16 @@
 var version = 44;
 var SETTINGS_STORAGE_KEY = 'almost_five_settings';
 var CALENDAR_POLL_INTERVAL_MS = 300000;
+var WEATHER_POLL_INTERVAL_MS = 1800000;
 var MEETING_STATUS_NONE = 0;
 var MEETING_STATUS_SOON = 1;
 var MEETING_STATUS_NOW = 2;
+var WEATHER_PHRASE_MAX_LENGTH = 18;
 var lastMeetingStatus = null;
+var lastWeatherPhrase = null;
 var pollTimer = null;
 var statusTimer = null;
+var weatherTimer = null;
 var cachedEvents = [];
 
 function buildConfigUrl(hasColorScreen, initialSettings) {
@@ -336,6 +340,115 @@ function mergeEventsIntoCache(existing, incoming) {
   return merged;
 }
 
+function compactWhitespace(text) {
+  return String(text || '').replace(/\s+/g, ' ').trim();
+}
+
+function normalizeWeatherDescription(description) {
+  var text = compactWhitespace(description);
+  if (!text) {
+    return '';
+  }
+  text = text.toLowerCase();
+  if (text.length > WEATHER_PHRASE_MAX_LENGTH) {
+    text = text.substring(0, WEATHER_PHRASE_MAX_LENGTH);
+    var lastSpace = text.lastIndexOf(' ');
+    if (lastSpace >= 6) {
+      text = text.substring(0, lastSpace);
+    }
+  }
+  return text;
+}
+
+function weatherCodeToLabel(code) {
+  if (code === 0) return 'clear';
+  if (code === 1 || code === 2 || code === 3) return 'partly cloudy';
+  if (code === 45 || code === 48) return 'fog';
+  if (code === 51 || code === 53 || code === 55 || code === 56 || code === 57) return 'drizzle';
+  if (code === 61 || code === 63 || code === 65 || code === 66 || code === 67 || code === 80 || code === 81 || code === 82) return 'rain';
+  if (code === 71 || code === 73 || code === 75 || code === 77 || code === 85 || code === 86) return 'snow';
+  if (code === 95 || code === 96 || code === 99) return 'thunder';
+  return 'weather';
+}
+
+function buildWeatherPhrase(current) {
+  if (!current) {
+    return '';
+  }
+
+  var weatherCode = current.weather_code;
+  if (typeof weatherCode !== 'number') {
+    weatherCode = current.weathercode;
+  }
+
+  var temperature = current.temperature_2m;
+  if (typeof temperature !== 'number') {
+    temperature = current.temperature;
+  }
+
+  if (typeof weatherCode !== 'number' || typeof temperature !== 'number') {
+    return '';
+  }
+
+  var temp = Math.round(temperature);
+  var descriptor = weatherCodeToLabel(weatherCode);
+  var phrase = descriptor + ' ' + temp + '°';
+  return normalizeWeatherDescription(phrase);
+}
+
+function sendWeatherPhrase(phrase) {
+  var normalized = normalizeWeatherDescription(phrase);
+  if (lastWeatherPhrase === normalized) {
+    return;
+  }
+
+  var dict = { KEY_WEATHER_PHRASE: normalized };
+  Pebble.sendAppMessage(dict, function() {
+    lastWeatherPhrase = normalized;
+  }, function(err) {
+    console.log('Weather phrase send failed: ' + JSON.stringify(err));
+  });
+}
+
+function refreshWeatherPhrase() {
+  var req = new XMLHttpRequest();
+  req.onload = function() {
+    if (req.status < 200 || req.status >= 300) {
+      console.log('Weather request failed with status ' + req.status);
+      sendWeatherPhrase('');
+      return;
+    }
+
+    try {
+      var payload = JSON.parse(req.responseText);
+      var phrase = buildWeatherPhrase(payload.current);
+      sendWeatherPhrase(phrase);
+    } catch (err) {
+      console.log('Weather parse failed: ' + err);
+      sendWeatherPhrase('');
+    }
+  };
+
+  req.onerror = function() {
+    console.log('Weather request network error');
+    sendWeatherPhrase('');
+  };
+
+  req.open('GET', 'https://api.open-meteo.com/v1/forecast?latitude=37.7749&longitude=-122.4194&current=temperature_2m,weather_code&temperature_unit=fahrenheit', true);
+  req.send();
+}
+
+function scheduleWeatherPolling() {
+  if (weatherTimer) {
+    clearTimeout(weatherTimer);
+  }
+
+  weatherTimer = setTimeout(function() {
+    refreshWeatherPhrase();
+    scheduleWeatherPolling();
+  }, WEATHER_POLL_INTERVAL_MS);
+}
+
 function millisUntilNextBoundary(now, minutes) {
   var intervalMs = minutes * 60 * 1000;
   var nowMs = now.getTime();
@@ -479,10 +592,16 @@ function startMeetingScheduling() {
   scheduleMinuteStatusChecks();
 }
 
+function startWeatherScheduling() {
+  refreshWeatherPhrase();
+  scheduleWeatherPolling();
+}
+
 if (typeof Pebble !== 'undefined') {
   Pebble.addEventListener('ready', function() {
     console.log('PebbleKit JS ready!');
     startMeetingScheduling();
+    startWeatherScheduling();
   });
 
   Pebble.addEventListener('showConfiguration', function() {
@@ -531,5 +650,8 @@ if (typeof module !== 'undefined' && module.exports) {
     getCalendarUrls: getCalendarUrls,
     millisUntilNextBoundary: millisUntilNextBoundary,
     mergeEventsIntoCache: mergeEventsIntoCache
+    ,
+    normalizeWeatherDescription: normalizeWeatherDescription,
+    buildWeatherPhrase: buildWeatherPhrase
   };
 }

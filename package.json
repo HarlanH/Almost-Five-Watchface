@@ -34,7 +34,8 @@
       "KEY_GESTURE": 7,
       "KEY_BT_NOTIFICATION": 8,
       "KEY_MEETING_STATUS": 9,
-      "KEY_STRICT_HOUR_PHRASES": 10
+      "KEY_STRICT_HOUR_PHRASES": 10,
+      "KEY_WEATHER_PHRASE": 11
     },
     "enableMultiJS": false,
     "displayName": "Almost Five",

@@ -11,7 +11,9 @@ const {
   normalizeCalendarUrl,
   getCalendarUrls,
   millisUntilNextBoundary,
-  mergeEventsIntoCache
+  mergeEventsIntoCache,
+  normalizeWeatherDescription,
+  buildWeatherPhrase
 } = require('../../src/js/pebble-js-app');
 
 test('buildConfigUrl returns embedded data URL', () => {
@@ -155,4 +157,18 @@ test('mergeEventsIntoCache drops duplicates across calendars', () => {
   ];
   var merged = mergeEventsIntoCache(cached, incoming);
   assert.equal(merged.length, 2);
+});
+
+test('normalizeWeatherDescription compacts and truncates text', () => {
+  assert.equal(
+    normalizeWeatherDescription('  Partly   Cloudy   and   Breezy  '),
+    'partly cloudy and'
+  );
+});
+
+test('buildWeatherPhrase supports open-meteo current payload', () => {
+  assert.equal(
+    buildWeatherPhrase({ weather_code: 63, temperature_2m: 58.8 }),
+    'rain 59°'
+  );
 });
