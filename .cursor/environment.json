@@ -1,5 +1,6 @@
 {
-  "image": {
-    "dockerfile": "Dockerfile"
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
   }
 }
