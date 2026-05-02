@@ -66,6 +66,7 @@ The companion app uses an embedded `data:` URL for the configuration page, so no
 - [ ] Configurable and improved text alignment
 - [ ] Graphic icon variants for bluetooth and battery indicators
 - [ ] Better support for round watch designs
+- [ ] Add "shh" indicator for quiet mode
 
 ## For developers
 
