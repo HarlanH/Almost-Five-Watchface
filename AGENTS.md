@@ -6,7 +6,7 @@ This is a Pebble/Rebble smartwatch watchface ("Almost Five") that shows fuzzy na
 
 Product direction: avoid raw digits in user-facing copy where practical (fuzzy time, weather line uses spelled-out temperature bands, not numeric °F/°C).
 
-Weather copy is **on-watch** from `strings/weather.yaml` via **`npm run codegen:weather`** (writes `src/generated/weather_i18n_gen.{h,c}`). PKJS sends Open-Meteo **`KEY_WEATHER_CODE`** + **`KEY_WEATHER_TEMP_F`** (°F only); the watch converts to °C for non-`LANG_EN` locales. Future tweaks and deferred ideas: `docs/weather-i18n-notes.md`.
+Weather copy is **on-watch** from `strings/weather.yaml` via **`npm run codegen:weather`** (writes `src/generated/weather_i18n_gen.{h,c}`). PKJS sends Open-Meteo **`KEY_WEATHER_CODE`** + **`KEY_WEATHER_TEMP_F`** (°F only); the watch converts to °C for non-`LANG_EN` locales. Future tweaks and deferred ideas: `docs/weather-i18n-notes.md`. **Fuzzy-time `lang-*.c`:** optional YAML/codegen unification is deferred; see `docs/lang-codegen-future.md`.
 
 ### Services
 
