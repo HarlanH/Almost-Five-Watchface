@@ -10,10 +10,7 @@ RUN apt-get update \
  && apt-get install -y nodejs \
  && rm -rf /var/lib/apt/lists/*
 
-# Install uv (Python package manager) and pebble-tool
+# Install uv (Python package manager) and pebble-tool CLI
 RUN curl -LsSf https://astral.sh/uv/install.sh | sh
 ENV PATH="/root/.local/bin:${PATH}"
 RUN uv tool install pebble-tool --python 3.12
-
-# Install latest Pebble SDK
-RUN pebble sdk install latest
