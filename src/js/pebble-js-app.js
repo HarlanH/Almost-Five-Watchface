@@ -6,7 +6,10 @@ var WEATHER_POLL_INTERVAL_MS = 1800000;
 var MEETING_STATUS_NONE = 0;
 var MEETING_STATUS_SOON = 1;
 var MEETING_STATUS_NOW = 2;
-var WEATHER_PHRASE_MAX_LENGTH = 18;
+// Spelled-out weather (no digits); allow room for "p. cloudy, mid fifties"
+var WEATHER_PHRASE_MAX_LENGTH = 30;
+// Open-Meteo temperature_unit; PKJS wording follows this
+var WEATHER_TEMPERATURE_UNIT = 'fahrenheit';
 var lastMeetingStatus = null;
 var lastWeatherPhrase = null;
 var pollTimer = null;
@@ -371,7 +374,73 @@ function weatherCodeToLabel(code) {
   return 'weather';
 }
 
-function buildWeatherPhrase(current) {
+function abbreviateWeatherDescriptor(label) {
+  var map = {
+    'partly cloudy': 'p. cloudy',
+    clear: 'clear',
+    fog: 'fog',
+    drizzle: 'drizzle',
+    rain: 'rain',
+    snow: 'snow',
+    thunder: 'storms',
+    weather: 'wx'
+  };
+  return map[label] || label;
+}
+
+function subDecadeQualifier(ones) {
+  if (ones <= 2) return 'low';
+  if (ones <= 6) return 'mid';
+  return 'high';
+}
+
+var DECADE_NAMES = ['', 'teens', 'twenties', 'thirties', 'forties', 'fifties', 'sixties', 'seventies', 'eighties', 'nineties'];
+
+function decadeWordFromTensDigit(tensDigit) {
+  return DECADE_NAMES[tensDigit] || 'warm';
+}
+
+/** Spoken band for °F (integer-ish); low/mid/high within each decade. */
+function fahrenheitToSpokenBand(f) {
+  var n = Math.round(f);
+  if (n < -20) return 'danger cold';
+  if (n < 0) return 'below zero';
+  if (n < 10) return 'single digits';
+  if (n < 20) {
+    return subDecadeQualifier(n % 10) + ' teens';
+  }
+  var tensDigit = Math.floor(n / 10);
+  var ones = n % 10;
+  if (tensDigit >= 10) {
+    return 'steamy';
+  }
+  return subDecadeQualifier(ones) + ' ' + decadeWordFromTensDigit(tensDigit);
+}
+
+/**
+ * Spoken band for °C: rounded to nearest integer, finer than 5° steps by using
+ * the same low/mid/high within-decade split as Fahrenheit.
+ */
+function celsiusToSpokenBand(c) {
+  var n = Math.round(c);
+  if (n < -25) return 'danger cold';
+  if (n < -10) return 'frigid';
+  if (n < 0) return 'below freezing';
+  if (n <= 2) return 'around freezing';
+  if (n <= 6) return 'cold';
+  if (n <= 9) return 'cool';
+  if (n < 20) {
+    return subDecadeQualifier(n % 10) + ' teens';
+  }
+  var tensDigit = Math.floor(n / 10);
+  var ones = n % 10;
+  if (tensDigit >= 5) {
+    return 'very hot';
+  }
+  return subDecadeQualifier(ones) + ' ' + decadeWordFromTensDigit(tensDigit);
+}
+
+function buildWeatherPhrase(current, temperatureUnit) {
   if (!current) {
     return '';
   }
@@ -390,9 +459,11 @@ function buildWeatherPhrase(current) {
     return '';
   }
 
-  var temp = Math.round(temperature);
-  var descriptor = weatherCodeToLabel(weatherCode);
-  var phrase = descriptor + ' ' + temp + '°';
+  var unit = temperatureUnit || WEATHER_TEMPERATURE_UNIT || 'fahrenheit';
+  var isC = unit === 'celsius';
+  var descriptor = abbreviateWeatherDescriptor(weatherCodeToLabel(weatherCode));
+  var tempWords = isC ? celsiusToSpokenBand(temperature) : fahrenheitToSpokenBand(temperature);
+  var phrase = descriptor + ', ' + tempWords;
   return normalizeWeatherDescription(phrase);
 }
 
@@ -421,7 +492,7 @@ function refreshWeatherPhrase() {
 
     try {
       var payload = JSON.parse(req.responseText);
-      var phrase = buildWeatherPhrase(payload.current);
+      var phrase = buildWeatherPhrase(payload.current, WEATHER_TEMPERATURE_UNIT);
       sendWeatherPhrase(phrase);
     } catch (err) {
       console.log('Weather parse failed: ' + err);
@@ -434,7 +505,7 @@ function refreshWeatherPhrase() {
     sendWeatherPhrase('');
   };
 
-  req.open('GET', 'https://api.open-meteo.com/v1/forecast?latitude=37.7749&longitude=-122.4194&current=temperature_2m,weather_code&temperature_unit=fahrenheit', true);
+  req.open('GET', 'https://api.open-meteo.com/v1/forecast?latitude=37.7749&longitude=-122.4194&current=temperature_2m,weather_code&temperature_unit=' + encodeURIComponent(WEATHER_TEMPERATURE_UNIT), true);
   req.send();
 }
 
@@ -652,6 +723,8 @@ if (typeof module !== 'undefined' && module.exports) {
     mergeEventsIntoCache: mergeEventsIntoCache
     ,
     normalizeWeatherDescription: normalizeWeatherDescription,
-    buildWeatherPhrase: buildWeatherPhrase
+    buildWeatherPhrase: buildWeatherPhrase,
+    fahrenheitToSpokenBand: fahrenheitToSpokenBand,
+    celsiusToSpokenBand: celsiusToSpokenBand
   };
 }

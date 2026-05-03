@@ -13,7 +13,9 @@ const {
   millisUntilNextBoundary,
   mergeEventsIntoCache,
   normalizeWeatherDescription,
-  buildWeatherPhrase
+  buildWeatherPhrase,
+  fahrenheitToSpokenBand,
+  celsiusToSpokenBand
 } = require('../../src/js/pebble-js-app');
 
 test('buildConfigUrl returns embedded data URL', () => {
@@ -162,13 +164,32 @@ test('mergeEventsIntoCache drops duplicates across calendars', () => {
 test('normalizeWeatherDescription compacts and truncates text', () => {
   assert.equal(
     normalizeWeatherDescription('  Partly   Cloudy   and   Breezy  '),
-    'partly cloudy and'
+    'partly cloudy and breezy'
+  );
+  var pad = 'word '.repeat(25);
+  assert.ok(normalizeWeatherDescription(pad).length <= 30);
+});
+
+test('buildWeatherPhrase uses spelled-out bands (fahrenheit)', () => {
+  assert.equal(
+    buildWeatherPhrase({ weather_code: 2, temperature_2m: 53 }, 'fahrenheit'),
+    'p. cloudy, mid fifties'
+  );
+  assert.equal(
+    buildWeatherPhrase({ weather_code: 63, temperature_2m: 58.8 }, 'fahrenheit'),
+    'rain, high fifties'
   );
 });
 
-test('buildWeatherPhrase supports open-meteo current payload', () => {
+test('buildWeatherPhrase uses spelled-out bands (celsius)', () => {
   assert.equal(
-    buildWeatherPhrase({ weather_code: 63, temperature_2m: 58.8 }),
-    'rain 59°'
+    buildWeatherPhrase({ weather_code: 2, temperature_2m: 16.2 }, 'celsius'),
+    'p. cloudy, mid teens'
   );
+});
+
+test('fahrenheit and celsius band helpers', () => {
+  assert.equal(fahrenheitToSpokenBand(53), 'mid fifties');
+  assert.equal(celsiusToSpokenBand(3), 'cold');
+  assert.equal(celsiusToSpokenBand(22), 'low twenties');
 });

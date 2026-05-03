@@ -42,6 +42,9 @@ int timeOffset;
 // When true (default), do not show :00 / :30 phrases until local time reaches that point
 static bool strictHourPhrases = true;
 
+// Greeting splash (display_message with hide_day_row): hide status row until splash ends
+static bool top_row_hidden_for_splash = false;
+
 // Variale to keep track of the last minute that we updated the time
 // Used to optimise so we only need to run time logic once per minute.
 int lastMinute = -1;
@@ -164,6 +167,10 @@ static void set_weather_phrase(const char *phrase)
 
 void update_status_indicators(void)
 {
+	if (top_row_hidden_for_splash) {
+		return;
+	}
+
 	bool show_bt = !btConnected;
 	bool show_shh = quiet_time_is_active();
 	if (show_bt && show_shh) {
@@ -569,6 +576,13 @@ void display_message(char *message, int displayTime, bool hide_day_row)
 
 		layer_set_hidden(text_layer_get_layer(dayOfMonthLayer), hide_day_row);
 
+		top_row_hidden_for_splash = hide_day_row;
+		if (top_row_hidden_for_splash) {
+			layer_set_hidden(text_layer_get_layer(btStatusLayer), true);
+			layer_set_hidden(text_layer_get_layer(meetingStatusLayer), true);
+			layer_set_hidden(text_layer_get_layer(batteryStatusLayer), true);
+		}
+
 		time(&resetMessageTime);
 		resetMessageTime += displayTime;
 	}
@@ -636,7 +650,9 @@ static void accel_tap_handler(AccelAxisType axis, int32_t direction) {
   }
 
   if (backlightTimer != NULL) {
-  	cycle_top_row_phrase();
+  	if (!top_row_hidden_for_splash) {
+  		cycle_top_row_phrase();
+  	}
   	app_timer_cancel(backlightTimer);
   }
 
@@ -664,6 +680,12 @@ void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
   		resetMessageTime = 0;
   		force = true;
   		layer_set_hidden(text_layer_get_layer(dayOfMonthLayer), false);
+  		if (top_row_hidden_for_splash) {
+  			top_row_hidden_for_splash = false;
+  			layer_set_hidden(text_layer_get_layer(btStatusLayer), false);
+  			layer_set_hidden(text_layer_get_layer(meetingStatusLayer), false);
+  			layer_set_hidden(text_layer_get_layer(batteryStatusLayer), false);
+  		}
   	}
   }
 
@@ -673,7 +695,9 @@ void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
   	lastTopRowRotationMinute = tick_time->tm_min;
   } else if (lastTopRowRotationMinute != tick_time->tm_min) {
   	lastTopRowRotationMinute = tick_time->tm_min;
-  	update_top_row_phrase_rotation();
+  	if (!top_row_hidden_for_splash) {
+  		update_top_row_phrase_rotation();
+  	}
   }
 
   update_status_indicators();

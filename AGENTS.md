@@ -4,6 +4,8 @@
 
 This is a Pebble/Rebble smartwatch watchface ("Almost Five") that shows fuzzy natural-language time. It is a native C app with a JS companion (PebbleKit JS). There are no backend services, databases, or Docker containers.
 
+Product direction: avoid raw digits in user-facing copy where practical (fuzzy time, weather line uses spelled-out temperature bands, not numeric °F/°C).
+
 ### Services
 
 | Service | Purpose | How to run |
