@@ -1,5 +1,7 @@
 {
-  "image": {
-    "dockerfile": "Dockerfile"
-  }
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "install": "npm ci && pebble sdk install latest"
 }
