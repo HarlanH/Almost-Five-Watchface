@@ -30,3 +30,4 @@ This is a Pebble/Rebble smartwatch watchface ("Almost Five") that shows fuzzy na
 - The emulator config webview path (`emu-app-config`) can be unreliable; prefer `npm run emu:apply-config -- --emulator <platform>` for local settings iteration (see README).
 - `pebble-tool` is installed via `uv tool install pebble-tool --python 3.12`. The SDK itself is installed separately via `pebble sdk install latest` and lives in `~/.pebble-sdk/`.
 - System dependencies required for the emulator: `libsdl1.2debian`, `libfdt1`, `libpixman-1-0`, `libsdl2-2.0-0`.
+- The Pebble SDK (~450MB) is installed by the update script (`pebble sdk install latest`), not baked into the Dockerfile, to keep the Docker image small enough for reliable pulls. It takes ~30s on first run each session.
