@@ -82,6 +82,9 @@ int yres;
 
 static ConfigMessageContext config_message_context;
 #define STATUS_BAR_HEIGHT 24
+#define STATUS_BAR_EDGE_PAD 2
+#define STATUS_BAR_LABEL_PAD 6
+#define STATUS_BAR_CENTER_MIN_W 40
 #define BACKLIGHT_TIMEOUT_MS 3000
 // Date row position (original placement — do not change for time-block spacing).
 #define DAY_LINE_ORIGIN_Y_OFFSET 30
@@ -130,6 +133,72 @@ static void build_top_row_phrase(void)
 	}
 
 	topRowPhraseText[0] = '\0';
+}
+
+static int status_bar_label_width_px(const char *text, GTextAlignment alignment)
+{
+	if (text == NULL || text[0] == '\0') {
+		return 0;
+	}
+	GFont font = fonts_get_system_font(FONT_KEY_GOTHIC_14);
+	GRect box = GRect(0, 0, 2000, STATUS_BAR_HEIGHT);
+	GSize sz = graphics_text_layout_get_content_size(text, font, box, GTextOverflowModeFill, alignment);
+	return sz.w;
+}
+
+static void layout_status_bar_row(void)
+{
+	int left_rail = STATUS_BAR_EDGE_PAD;
+	if (btStatusText[0] != '\0') {
+		left_rail = STATUS_BAR_EDGE_PAD + status_bar_label_width_px(btStatusText, GTextAlignmentLeft) + STATUS_BAR_LABEL_PAD;
+	}
+	int right_rail = STATUS_BAR_EDGE_PAD;
+	if (batteryStatusText[0] != '\0') {
+		right_rail = STATUS_BAR_EDGE_PAD + status_bar_label_width_px(batteryStatusText, GTextAlignmentRight) + STATUS_BAR_LABEL_PAD;
+	}
+
+	int center_w = xres - left_rail - right_rail;
+	if (center_w < STATUS_BAR_CENTER_MIN_W) {
+		int deficit = STATUS_BAR_CENTER_MIN_W - center_w;
+		int min_rail = STATUS_BAR_EDGE_PAD + 8;
+		if (left_rail > min_rail) {
+			int take = deficit / 2;
+			if (take > left_rail - min_rail) {
+				take = left_rail - min_rail;
+			}
+			left_rail -= take;
+			deficit -= take;
+		}
+		if (deficit > 0 && right_rail > min_rail) {
+			int take = deficit;
+			if (take > right_rail - min_rail) {
+				take = right_rail - min_rail;
+			}
+			right_rail -= take;
+		}
+		center_w = xres - left_rail - right_rail;
+		if (center_w < STATUS_BAR_CENTER_MIN_W) {
+			left_rail = STATUS_BAR_EDGE_PAD;
+			right_rail = STATUS_BAR_EDGE_PAD;
+			center_w = xres - left_rail - right_rail;
+		}
+	}
+
+	int bt_w = left_rail - STATUS_BAR_EDGE_PAD;
+	if (bt_w < 1) {
+		bt_w = 1;
+	}
+	int bat_w = right_rail - STATUS_BAR_EDGE_PAD;
+	if (bat_w < 1) {
+		bat_w = 1;
+	}
+
+	layer_set_frame(text_layer_get_layer(btStatusLayer),
+			GRect(STATUS_BAR_EDGE_PAD, 0, bt_w, STATUS_BAR_HEIGHT));
+	layer_set_frame(text_layer_get_layer(batteryStatusLayer),
+			GRect(xres - right_rail, 0, bat_w, STATUS_BAR_HEIGHT));
+	layer_set_frame(text_layer_get_layer(meetingStatusLayer),
+			GRect(left_rail, 0, center_w, STATUS_BAR_HEIGHT));
 }
 
 static void update_top_row_phrase_rotation(void)
@@ -201,6 +270,8 @@ void update_status_indicators(void)
 	text_layer_set_text(btStatusLayer, btStatusText);
 	text_layer_set_text(meetingStatusLayer, topRowPhraseText);
 	text_layer_set_text(batteryStatusLayer, batteryStatusText);
+
+	layout_status_bar_row();
 }
 
 static void apply_current_palette_to_layers(void)
@@ -869,6 +940,7 @@ void handle_init() {
 	text_layer_set_text_color(meetingStatusLayer, regularTextColor);
 	text_layer_set_background_color(meetingStatusLayer, GColorClear);
 	text_layer_set_text_alignment(meetingStatusLayer, GTextAlignmentCenter);
+	text_layer_set_overflow_mode(meetingStatusLayer, GTextOverflowModeTrailingEllipsis);
 	meetingStatusText[0] = '\0';
 	text_layer_set_text(meetingStatusLayer, meetingStatusText);
 	layer_add_child(window_layer, text_layer_get_layer(meetingStatusLayer));
