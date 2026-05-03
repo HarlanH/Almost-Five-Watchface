@@ -6,11 +6,14 @@ This is a Pebble/Rebble smartwatch watchface ("Almost Five") that shows fuzzy na
 
 Product direction: avoid raw digits in user-facing copy where practical (fuzzy time, weather line uses spelled-out temperature bands, not numeric °F/°C).
 
+Weather copy is **on-watch** from `strings/weather.yaml` via **`npm run codegen:weather`** (writes `src/generated/weather_i18n_gen.{h,c}`). PKJS sends Open-Meteo **`KEY_WEATHER_CODE`** + **`KEY_WEATHER_TEMP_F`** (°F only); the watch converts to °C for non-`LANG_EN` locales. Future tweaks and deferred ideas: `docs/weather-i18n-notes.md`.
+
 ### Services
 
 | Service | Purpose | How to run |
 |---|---|---|
 | JS tests | PKJS + emulator config tool unit tests | `npm test` |
+| Weather strings codegen | Regenerate C from `strings/weather.yaml` | `npm run codegen:weather` |
 | Pebble build | Compile watchface for all target platforms | `pebble build` |
 | Pebble emulator | Run the watchface visually | `pebble install --emulator <platform>` (e.g. `basalt`, `flint`, `aplite`, `diorite`) |
 
@@ -23,6 +26,7 @@ Product direction: avoid raw digits in user-facing copy where practical (fuzzy t
 - **Screenshot:** `pebble screenshot build/emu.png --no-open --emulator basalt`
 - **Set emulator time:** `pebble emu-set-time HH:MM:SS --emulator basalt`
 - **Apply dev config:** `npm run emu:apply-config -- --emulator flint`
+- **Weather i18n codegen:** `npm run codegen:weather` (after editing `strings/weather.yaml`)
 
 ### Gotchas
 

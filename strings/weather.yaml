@@ -1,0 +1,88 @@
+# Source of truth for on-watch weather copy (codegen → src/generated/weather_i18n_gen.c).
+# Locale keys match num2words.h LANG_* integer IDs (string keys in YAML).
+# All locales currently inherit English; translators can split per-locale blocks later.
+
+version: 1
+
+x-weather-en: &weather-en
+  sky_unknown: "-"
+  sky:
+    0: "clear"
+    1: "p. cloudy"
+    2: "p. cloudy"
+    3: "p. cloudy"
+    45: "fog"
+    48: "fog"
+    51: "drizzle"
+    53: "drizzle"
+    55: "drizzle"
+    56: "drizzle"
+    57: "drizzle"
+    61: "rain"
+    63: "rain"
+    65: "rain"
+    66: "rain"
+    67: "rain"
+    71: "snow"
+    73: "snow"
+    75: "snow"
+    77: "snow"
+    80: "rain"
+    81: "rain"
+    82: "rain"
+    85: "snow"
+    86: "snow"
+    95: "storms"
+    96: "storms"
+    99: "storms"
+  qual:
+    low: "low"
+    mid: "mid"
+    high: "high"
+  decades:
+    teens: "teens"
+    twenties: "twenties"
+    thirties: "thirties"
+    forties: "forties"
+    fifties: "fifties"
+    sixties: "sixties"
+    seventies: "seventies"
+    eighties: "eighties"
+    nineties: "nineties"
+  temp_f:
+    danger_cold: "danger cold"
+    below_zero: "below zero"
+    single_digits: "single digits"
+    steamy: "steamy"
+  temp_c:
+    danger_cold: "danger cold"
+    frigid: "frigid"
+    below_freezing: "below freezing"
+    around_freezing: "around freezing"
+    cold: "cold"
+    cool: "cool"
+    very_hot: "very hot"
+
+locales:
+  "1":
+    <<: *weather-en
+  "2":
+    <<: *weather-en
+  "3":
+    <<: *weather-en
+  "4":
+    <<: *weather-en
+  "5":
+    <<: *weather-en
+  "6":
+    <<: *weather-en
+  "7":
+    <<: *weather-en
+  "8":
+    <<: *weather-en
+  "9":
+    <<: *weather-en
+  "10":
+    <<: *weather-en
+  "11":
+    <<: *weather-en

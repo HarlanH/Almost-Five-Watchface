@@ -12,10 +12,7 @@ const {
   getCalendarUrls,
   millisUntilNextBoundary,
   mergeEventsIntoCache,
-  normalizeWeatherDescription,
-  buildWeatherPhrase,
-  fahrenheitToSpokenBand,
-  celsiusToSpokenBand
+  buildWeatherAppMessage
 } = require('../../src/js/pebble-js-app');
 
 test('buildConfigUrl returns embedded data URL', () => {
@@ -161,35 +158,15 @@ test('mergeEventsIntoCache drops duplicates across calendars', () => {
   assert.equal(merged.length, 2);
 });
 
-test('normalizeWeatherDescription compacts and truncates text', () => {
-  assert.equal(
-    normalizeWeatherDescription('  Partly   Cloudy   and   Breezy  '),
-    'partly cloudy and breezy'
-  );
-  var pad = 'word '.repeat(25);
-  assert.ok(normalizeWeatherDescription(pad).length <= 30);
-});
-
-test('buildWeatherPhrase uses spelled-out bands (fahrenheit)', () => {
-  assert.equal(
-    buildWeatherPhrase({ weather_code: 2, temperature_2m: 53 }, 'fahrenheit'),
-    'p. cloudy, mid fifties'
-  );
-  assert.equal(
-    buildWeatherPhrase({ weather_code: 63, temperature_2m: 58.8 }, 'fahrenheit'),
-    'rain, high fifties'
-  );
-});
-
-test('buildWeatherPhrase uses spelled-out bands (celsius)', () => {
-  assert.equal(
-    buildWeatherPhrase({ weather_code: 2, temperature_2m: 16.2 }, 'celsius'),
-    'p. cloudy, mid teens'
-  );
-});
-
-test('fahrenheit and celsius band helpers', () => {
-  assert.equal(fahrenheitToSpokenBand(53), 'mid fifties');
-  assert.equal(celsiusToSpokenBand(3), 'cold');
-  assert.equal(celsiusToSpokenBand(22), 'low twenties');
+test('buildWeatherAppMessage maps Open-Meteo current to int tuples (°F)', () => {
+  assert.deepEqual(buildWeatherAppMessage({ weather_code: 2, temperature_2m: 53.2 }), {
+    11: 2,
+    12: 53
+  });
+  assert.deepEqual(buildWeatherAppMessage({ weather_code: 63, temperature_2m: 58.8 }), {
+    11: 63,
+    12: 59
+  });
+  assert.equal(buildWeatherAppMessage(null), null);
+  assert.equal(buildWeatherAppMessage({}), null);
 });

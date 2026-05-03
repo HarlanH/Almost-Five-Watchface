@@ -1,17 +1,16 @@
 // Watchface config version
 var version = 44;
+// Pebble injects message keys at build time; Node tests use package.json ids.
+var K_WEATHER_CODE = typeof KEY_WEATHER_CODE !== 'undefined' ? KEY_WEATHER_CODE : 11;
+var K_WEATHER_TEMP_F = typeof KEY_WEATHER_TEMP_F !== 'undefined' ? KEY_WEATHER_TEMP_F : 12;
 var SETTINGS_STORAGE_KEY = 'almost_five_settings';
 var CALENDAR_POLL_INTERVAL_MS = 300000;
 var WEATHER_POLL_INTERVAL_MS = 1800000;
 var MEETING_STATUS_NONE = 0;
 var MEETING_STATUS_SOON = 1;
 var MEETING_STATUS_NOW = 2;
-// Spelled-out weather (no digits); allow room for "p. cloudy, mid fifties"
-var WEATHER_PHRASE_MAX_LENGTH = 30;
-// Open-Meteo temperature_unit; PKJS wording follows this
-var WEATHER_TEMPERATURE_UNIT = 'fahrenheit';
 var lastMeetingStatus = null;
-var lastWeatherPhrase = null;
+var lastWeatherSig = null;
 var pollTimer = null;
 var statusTimer = null;
 var weatherTimer = null;
@@ -343,141 +342,48 @@ function mergeEventsIntoCache(existing, incoming) {
   return merged;
 }
 
-function compactWhitespace(text) {
-  return String(text || '').replace(/\s+/g, ' ').trim();
-}
-
-function normalizeWeatherDescription(description) {
-  var text = compactWhitespace(description);
-  if (!text) {
-    return '';
-  }
-  text = text.toLowerCase();
-  if (text.length > WEATHER_PHRASE_MAX_LENGTH) {
-    text = text.substring(0, WEATHER_PHRASE_MAX_LENGTH);
-    var lastSpace = text.lastIndexOf(' ');
-    if (lastSpace >= 6) {
-      text = text.substring(0, lastSpace);
-    }
-  }
-  return text;
-}
-
-function weatherCodeToLabel(code) {
-  if (code === 0) return 'clear';
-  if (code === 1 || code === 2 || code === 3) return 'partly cloudy';
-  if (code === 45 || code === 48) return 'fog';
-  if (code === 51 || code === 53 || code === 55 || code === 56 || code === 57) return 'drizzle';
-  if (code === 61 || code === 63 || code === 65 || code === 66 || code === 67 || code === 80 || code === 81 || code === 82) return 'rain';
-  if (code === 71 || code === 73 || code === 75 || code === 77 || code === 85 || code === 86) return 'snow';
-  if (code === 95 || code === 96 || code === 99) return 'thunder';
-  return 'weather';
-}
-
-function abbreviateWeatherDescriptor(label) {
-  var map = {
-    'partly cloudy': 'p. cloudy',
-    clear: 'clear',
-    fog: 'fog',
-    drizzle: 'drizzle',
-    rain: 'rain',
-    snow: 'snow',
-    thunder: 'storms',
-    weather: 'wx'
-  };
-  return map[label] || label;
-}
-
-function subDecadeQualifier(ones) {
-  if (ones <= 2) return 'low';
-  if (ones <= 6) return 'mid';
-  return 'high';
-}
-
-var DECADE_NAMES = ['', 'teens', 'twenties', 'thirties', 'forties', 'fifties', 'sixties', 'seventies', 'eighties', 'nineties'];
-
-function decadeWordFromTensDigit(tensDigit) {
-  return DECADE_NAMES[tensDigit] || 'warm';
-}
-
-/** Spoken band for °F (integer-ish); low/mid/high within each decade. */
-function fahrenheitToSpokenBand(f) {
-  var n = Math.round(f);
-  if (n < -20) return 'danger cold';
-  if (n < 0) return 'below zero';
-  if (n < 10) return 'single digits';
-  if (n < 20) {
-    return subDecadeQualifier(n % 10) + ' teens';
-  }
-  var tensDigit = Math.floor(n / 10);
-  var ones = n % 10;
-  if (tensDigit >= 10) {
-    return 'steamy';
-  }
-  return subDecadeQualifier(ones) + ' ' + decadeWordFromTensDigit(tensDigit);
-}
-
-/**
- * Spoken band for °C: rounded to nearest integer, finer than 5° steps by using
- * the same low/mid/high within-decade split as Fahrenheit.
- */
-function celsiusToSpokenBand(c) {
-  var n = Math.round(c);
-  if (n < -25) return 'danger cold';
-  if (n < -10) return 'frigid';
-  if (n < 0) return 'below freezing';
-  if (n <= 2) return 'around freezing';
-  if (n <= 6) return 'cold';
-  if (n <= 9) return 'cool';
-  if (n < 20) {
-    return subDecadeQualifier(n % 10) + ' teens';
-  }
-  var tensDigit = Math.floor(n / 10);
-  var ones = n % 10;
-  if (tensDigit >= 5) {
-    return 'very hot';
-  }
-  return subDecadeQualifier(ones) + ' ' + decadeWordFromTensDigit(tensDigit);
-}
-
-function buildWeatherPhrase(current, temperatureUnit) {
+/** Build AppMessage dict for watch-localized weather (Open-Meteo current object). Always °F on the wire. */
+function buildWeatherAppMessage(current) {
   if (!current) {
-    return '';
+    return null;
   }
 
-  var weatherCode = current.weather_code;
-  if (typeof weatherCode !== 'number') {
-    weatherCode = current.weathercode;
+  var code = current.weather_code;
+  if (typeof code !== 'number') {
+    code = current.weathercode;
   }
 
-  var temperature = current.temperature_2m;
-  if (typeof temperature !== 'number') {
-    temperature = current.temperature;
+  var tempF = current.temperature_2m;
+  if (typeof tempF !== 'number') {
+    tempF = current.temperature;
   }
 
-  if (typeof weatherCode !== 'number' || typeof temperature !== 'number') {
-    return '';
+  if (typeof code !== 'number' || typeof tempF !== 'number') {
+    return null;
   }
 
-  var unit = temperatureUnit || WEATHER_TEMPERATURE_UNIT || 'fahrenheit';
-  var isC = unit === 'celsius';
-  var descriptor = abbreviateWeatherDescriptor(weatherCodeToLabel(weatherCode));
-  var tempWords = isC ? celsiusToSpokenBand(temperature) : fahrenheitToSpokenBand(temperature);
-  var phrase = descriptor + ', ' + tempWords;
-  return normalizeWeatherDescription(phrase);
+  var msg = {};
+  msg[K_WEATHER_CODE] = Math.round(code);
+  msg[K_WEATHER_TEMP_F] = Math.round(tempF);
+  return msg;
 }
 
-function sendWeatherPhrase(phrase) {
-  var normalized = normalizeWeatherDescription(phrase);
-  if (lastWeatherPhrase === normalized) {
+function sendWeatherAppMessage(dict) {
+  if (!dict) {
+    dict = {};
+    dict[K_WEATHER_CODE] = -1;
+    dict[K_WEATHER_TEMP_F] = 0;
+  }
+
+  var sig = dict[K_WEATHER_CODE] + ':' + dict[K_WEATHER_TEMP_F];
+  if (lastWeatherSig === sig) {
     return;
   }
 
-  var dict = { KEY_WEATHER_PHRASE: normalized };
   Pebble.sendAppMessage(dict, function() {
-    lastWeatherPhrase = normalized;
+    lastWeatherSig = sig;
   }, function(err) {
-    console.log('Weather phrase send failed: ' + JSON.stringify(err));
+    console.log('Weather AppMessage send failed: ' + JSON.stringify(err));
   });
 }
 
@@ -486,26 +392,26 @@ function refreshWeatherPhrase() {
   req.onload = function() {
     if (req.status < 200 || req.status >= 300) {
       console.log('Weather request failed with status ' + req.status);
-      sendWeatherPhrase('');
+      sendWeatherAppMessage(null);
       return;
     }
 
     try {
       var payload = JSON.parse(req.responseText);
-      var phrase = buildWeatherPhrase(payload.current, WEATHER_TEMPERATURE_UNIT);
-      sendWeatherPhrase(phrase);
+      var msg = buildWeatherAppMessage(payload.current);
+      sendWeatherAppMessage(msg || null);
     } catch (err) {
       console.log('Weather parse failed: ' + err);
-      sendWeatherPhrase('');
+      sendWeatherAppMessage(null);
     }
   };
 
   req.onerror = function() {
     console.log('Weather request network error');
-    sendWeatherPhrase('');
+    sendWeatherAppMessage(null);
   };
 
-  req.open('GET', 'https://api.open-meteo.com/v1/forecast?latitude=37.7749&longitude=-122.4194&current=temperature_2m,weather_code&temperature_unit=' + encodeURIComponent(WEATHER_TEMPERATURE_UNIT), true);
+  req.open('GET', 'https://api.open-meteo.com/v1/forecast?latitude=37.7749&longitude=-122.4194&current=temperature_2m,weather_code&temperature_unit=fahrenheit', true);
   req.send();
 }
 
@@ -720,11 +626,7 @@ if (typeof module !== 'undefined' && module.exports) {
     normalizeCalendarUrl: normalizeCalendarUrl,
     getCalendarUrls: getCalendarUrls,
     millisUntilNextBoundary: millisUntilNextBoundary,
-    mergeEventsIntoCache: mergeEventsIntoCache
-    ,
-    normalizeWeatherDescription: normalizeWeatherDescription,
-    buildWeatherPhrase: buildWeatherPhrase,
-    fahrenheitToSpokenBand: fahrenheitToSpokenBand,
-    celsiusToSpokenBand: celsiusToSpokenBand
+    mergeEventsIntoCache: mergeEventsIntoCache,
+    buildWeatherAppMessage: buildWeatherAppMessage
   };
 }

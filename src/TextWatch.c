@@ -6,6 +6,7 @@
 #include "num2words.h"
 #include "TextWatch.h"
 #include "config_message.h"
+#include "weather_format.h"
 
 Window *window;
 TextLayer *dayOfMonthLayer;
@@ -75,6 +76,9 @@ int dateGesture = GESTURE_ANY;
 // 2 = on
 int bt_lost_notification = BT_NOTIFY_ON;
 int meetingStatus = MEETING_STATUS_NONE;
+
+static int16_t s_weather_code = -1;
+static int16_t s_weather_temp_f;
 
 // Screen resolution. Set in the init function.
 int xres;
@@ -214,24 +218,34 @@ static void cycle_top_row_phrase(void)
 	update_status_indicators();
 }
 
-static void set_weather_phrase(const char *phrase)
+static void weather_refresh_from_storage(void)
 {
-	if (!phrase) {
+	if (s_weather_code < 0) {
 		weatherPhraseText[0] = '\0';
 		return;
 	}
 
-	while (*phrase == ' ') {
-		phrase++;
-	}
-
-	snprintf(weatherPhraseText, sizeof(weatherPhraseText), "%s", phrase);
+	weather_format_phrase(weatherPhraseText, sizeof(weatherPhraseText), get_current_language_id(), s_weather_code,
+			      s_weather_temp_f);
 	for (int i = (int)strlen(weatherPhraseText) - 1; i >= 0; i--) {
 		if (weatherPhraseText[i] != ' ') {
 			break;
 		}
 		weatherPhraseText[i] = '\0';
 	}
+}
+
+static void weather_apply_from_app_message(int32_t code, int32_t temp_f)
+{
+	if (code < 0) {
+		s_weather_code = -1;
+		weatherPhraseText[0] = '\0';
+		return;
+	}
+
+	s_weather_code = (int16_t)code;
+	s_weather_temp_f = (int16_t)temp_f;
+	weather_refresh_from_storage();
 }
 
 void update_status_indicators(void)
@@ -806,6 +820,7 @@ struct tm *get_localtime()
 
 void refresh_time() {
 	apply_current_palette_to_layers();
+	weather_refresh_from_storage();
 	update_status_indicators();
 	update_day_of_month_line(get_localtime(), true);
 	display_time(get_localtime(), true);
@@ -843,20 +858,17 @@ void set_meeting_status(int status) {
 	update_status_indicators();
 }
 
-void set_weather_status(const char *phrase) {
-	set_weather_phrase(phrase);
-	update_status_indicators();
-}
-
 void inbox_received_handler(DictionaryIterator *iter, void *context) {
   (void)context;
   Tuple *meeting_status_t = dict_find(iter, KEY_MEETING_STATUS);
   if (meeting_status_t) {
   	set_meeting_status(meeting_status_t->value->uint8);
   }
-  Tuple *weather_phrase_t = dict_find(iter, KEY_WEATHER_PHRASE);
-  if (weather_phrase_t) {
-  	set_weather_status(weather_phrase_t->value->cstring);
+  Tuple *weather_code_t = dict_find(iter, KEY_WEATHER_CODE);
+  Tuple *weather_temp_t = dict_find(iter, KEY_WEATHER_TEMP_F);
+  if (weather_code_t && weather_temp_t) {
+  	weather_apply_from_app_message(weather_code_t->value->int32, weather_temp_t->value->int32);
+  	update_status_indicators();
   }
   config_message_handle_inbox(iter, &config_message_context);
 }

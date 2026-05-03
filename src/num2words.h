@@ -45,6 +45,8 @@ void time_to_greeting(int hour, char* greeting);
 
 void set_language(uint8_t language);
 
+uint8_t get_current_language_id(void);
+
 void get_connection_lost_message(char* message);
 
 void get_day_of_month_message(int day, char* message, size_t length);

@@ -15,6 +15,7 @@
 #include "lang-japanese.h"
 
 static const Language* language = &LANG_ENGLISH;
+static uint8_t current_language_id = LANG_EN;
 
 static void get_english_day_of_month_ordinal(int day, char* message, size_t length) {
   static const char *ordinals[] = {
@@ -37,6 +38,7 @@ static void get_english_day_of_month_ordinal(int day, char* message, size_t leng
 }
 
 void set_language(uint8_t lang) {
+  current_language_id = lang;
   switch (lang) {
     case LANG_EN:
       language = &LANG_ENGLISH;
@@ -83,8 +85,13 @@ void set_language(uint8_t lang) {
       break;
 
     default:
+      current_language_id = LANG_EN;
       language = &LANG_ENGLISH;
   }
+}
+
+uint8_t get_current_language_id(void) {
+  return current_language_id;
 }
 
 const char* getHourWord(int hour) {
