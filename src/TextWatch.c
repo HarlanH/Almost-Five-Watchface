@@ -164,16 +164,16 @@ static void set_weather_phrase(const char *phrase)
 
 void update_status_indicators(void)
 {
-	btStatusText[0] = '\0';
-	if (!btConnected) {
+	bool show_bt = !btConnected;
+	bool show_shh = quiet_time_is_active();
+	if (show_bt && show_shh) {
+		snprintf(btStatusText, sizeof(btStatusText), "BT! SHH");
+	} else if (show_bt) {
 		snprintf(btStatusText, sizeof(btStatusText), "BT!");
-	}
-	if (quiet_time_is_active()) {
-		if (btStatusText[0] != '\0') {
-			snprintf(btStatusText, sizeof(btStatusText), "%s SHH", btStatusText);
-		} else {
-			snprintf(btStatusText, sizeof(btStatusText), "SHH");
-		}
+	} else if (show_shh) {
+		snprintf(btStatusText, sizeof(btStatusText), "SHH");
+	} else {
+		btStatusText[0] = '\0';
 	}
 
 	if (batteryPercent < 40) {

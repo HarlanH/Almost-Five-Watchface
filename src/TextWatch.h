@@ -91,6 +91,7 @@ void time_to_lines(int hours, int minutes, struct tm *raw_local,
 void display_message(char *message, int displayTime, bool hide_day_row);
 void display_time(struct tm *t, bool force);
 void checkConnection(time_t *now);
+void update_status_indicators(void);
 void handle_tick(struct tm *tick_time, TimeUnits units_changed);
 void init_line(Line* line);
 struct tm *get_localtime();
