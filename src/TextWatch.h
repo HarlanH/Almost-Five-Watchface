@@ -13,6 +13,7 @@
 #define KEY_BT_NOTIFICATION 8
 #define KEY_MEETING_STATUS 9
 #define KEY_STRICT_HOUR_PHRASES 10
+#define KEY_WEATHER_PHRASE 11
 
 // Max number of characters in a line
 #define LINE_LENGTH 9

@@ -14,12 +14,16 @@ TextLayer *meetingStatusLayer;
 TextLayer *batteryStatusLayer;
 char dayOfMonthText[32];
 char btStatusText[12];
-char meetingStatusText[20];
+char meetingStatusText[32];
 char batteryStatusText[20];
+char weatherPhraseText[32];
+char topRowPhraseText[32];
 int lastDisplayedDay = -1;
 AppTimer *backlightTimer = NULL;
 bool btConnected = true;
 int batteryPercent = 100;
+bool topRowShowWeather = false;
+int lastTopRowRotationMinute = -1;
 
 Line lines[NUM_LINES];
 
@@ -75,6 +79,7 @@ int yres;
 
 static ConfigMessageContext config_message_context;
 #define STATUS_BAR_HEIGHT 24
+#define BACKLIGHT_TIMEOUT_MS 3000
 // Date row position (original placement — do not change for time-block spacing).
 #define DAY_LINE_ORIGIN_Y_OFFSET 30
 #define DAY_LINE_LAYER_HEIGHT 28
@@ -91,33 +96,103 @@ void backlight_off_handler(void *context)
 	backlightTimer = NULL;
 }
 
+static bool top_row_has_meeting_phrase(void)
+{
+	return meetingStatus != MEETING_STATUS_NONE;
+}
+
+static bool top_row_has_weather_phrase(void)
+{
+	return weatherPhraseText[0] != '\0';
+}
+
+static void build_top_row_phrase(void)
+{
+	if (top_row_has_meeting_phrase() && top_row_has_weather_phrase()) {
+		const char *selected = topRowShowWeather ? weatherPhraseText : meetingStatusText;
+		snprintf(topRowPhraseText, sizeof(topRowPhraseText), "%s", selected);
+		return;
+	}
+
+	if (top_row_has_meeting_phrase()) {
+		topRowShowWeather = false;
+		snprintf(topRowPhraseText, sizeof(topRowPhraseText), "%s", meetingStatusText);
+		return;
+	}
+
+	if (top_row_has_weather_phrase()) {
+		topRowShowWeather = true;
+		snprintf(topRowPhraseText, sizeof(topRowPhraseText), "%s", weatherPhraseText);
+		return;
+	}
+
+	topRowPhraseText[0] = '\0';
+}
+
+static void update_top_row_phrase_rotation(void)
+{
+	if (top_row_has_meeting_phrase() && top_row_has_weather_phrase()) {
+		topRowShowWeather = !topRowShowWeather;
+	}
+}
+
+static void cycle_top_row_phrase(void)
+{
+	update_top_row_phrase_rotation();
+	update_status_indicators();
+}
+
+static void set_weather_phrase(const char *phrase)
+{
+	if (!phrase) {
+		weatherPhraseText[0] = '\0';
+		return;
+	}
+
+	while (*phrase == ' ') {
+		phrase++;
+	}
+
+	snprintf(weatherPhraseText, sizeof(weatherPhraseText), "%s", phrase);
+	for (int i = (int)strlen(weatherPhraseText) - 1; i >= 0; i--) {
+		if (weatherPhraseText[i] != ' ') {
+			break;
+		}
+		weatherPhraseText[i] = '\0';
+	}
+}
+
 void update_status_indicators(void)
 {
-	if (btConnected) {
-		btStatusText[0] = '\0';
-	} else {
+	btStatusText[0] = '\0';
+	if (!btConnected) {
 		snprintf(btStatusText, sizeof(btStatusText), "BT!");
+	}
+	if (quiet_time_is_active()) {
+		if (btStatusText[0] != '\0') {
+			snprintf(btStatusText, sizeof(btStatusText), "%s SHH", btStatusText);
+		} else {
+			snprintf(btStatusText, sizeof(btStatusText), "SHH");
+		}
 	}
 
 	if (batteryPercent < 40) {
-		snprintf(batteryStatusText, sizeof(batteryStatusText), get_battery_status_format(), batteryPercent);
+		snprintf(batteryStatusText, sizeof(batteryStatusText), "BAT!");
 	} else {
 		batteryStatusText[0] = '\0';
 	}
 
 	if (meetingStatus == MEETING_STATUS_NOW) {
-		text_layer_set_font(meetingStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
 		get_meeting_now_message(meetingStatusText, sizeof(meetingStatusText));
 	} else if (meetingStatus == MEETING_STATUS_SOON) {
-		text_layer_set_font(meetingStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_14));
 		get_meeting_soon_message(meetingStatusText, sizeof(meetingStatusText));
 	} else {
-		text_layer_set_font(meetingStatusLayer, fonts_get_system_font(FONT_KEY_GOTHIC_14_BOLD));
 		meetingStatusText[0] = '\0';
 	}
+	build_top_row_phrase();
 
 	text_layer_set_text(btStatusLayer, btStatusText);
-	text_layer_set_text(meetingStatusLayer, meetingStatusText);
+	text_layer_set_text(meetingStatusLayer, topRowPhraseText);
 	text_layer_set_text(batteryStatusLayer, batteryStatusText);
 }
 
@@ -560,11 +635,13 @@ static void accel_tap_handler(AccelAxisType axis, int32_t direction) {
 	}
   }
 
-  light_enable(true);
   if (backlightTimer != NULL) {
+  	cycle_top_row_phrase();
   	app_timer_cancel(backlightTimer);
   }
-  backlightTimer = app_timer_register(1800, backlight_off_handler, NULL);
+
+  light_enable(true);
+  backlightTimer = app_timer_register(BACKLIGHT_TIMEOUT_MS, backlight_off_handler, NULL);
 }
 
 void check_connection(time_t *now) {
@@ -591,6 +668,15 @@ void handle_tick(struct tm *tick_time, TimeUnits units_changed) {
   }
 
   check_connection(&now);
+
+  if (lastTopRowRotationMinute == -1) {
+  	lastTopRowRotationMinute = tick_time->tm_min;
+  } else if (lastTopRowRotationMinute != tick_time->tm_min) {
+  	lastTopRowRotationMinute = tick_time->tm_min;
+  	update_top_row_phrase_rotation();
+  }
+
+  update_status_indicators();
 
   update_day_of_month_line(tick_time, false);
   display_time(tick_time, force);
@@ -662,11 +748,20 @@ void set_meeting_status(int status) {
 	update_status_indicators();
 }
 
+void set_weather_status(const char *phrase) {
+	set_weather_phrase(phrase);
+	update_status_indicators();
+}
+
 void inbox_received_handler(DictionaryIterator *iter, void *context) {
   (void)context;
   Tuple *meeting_status_t = dict_find(iter, KEY_MEETING_STATUS);
   if (meeting_status_t) {
   	set_meeting_status(meeting_status_t->value->uint8);
+  }
+  Tuple *weather_phrase_t = dict_find(iter, KEY_WEATHER_PHRASE);
+  if (weather_phrase_t) {
+  	set_weather_status(weather_phrase_t->value->cstring);
   }
   config_message_handle_inbox(iter, &config_message_context);
 }
