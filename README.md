@@ -62,11 +62,14 @@ The companion app uses an embedded `data:` URL for the configuration page, so no
 ### Possible future features
 
 - [ ] Japanese in kana/kanji: system fonts lack CJK glyphs; bundle a subset font and load it for the text layers that show time strings.
-- [ ] More languages
+- [ ] More languages, better translations
 - [ ] Configurable and improved text alignment
 - [ ] Graphic icon variants for bluetooth and battery indicators
 - [ ] Better support for round watch designs
 - [ ] Add "shh" indicator for quiet mode
+- [ ] Test suite with screenshot review
+- [ ] "fifty and sunny" weather display https://developer.repebble.com/tutorials/watchface-tutorial/part4/
+- [ ] handle timeline notifications https://developer.repebble.com/tutorials/watchface-tutorial/part5/
 
 ## For developers
 
