@@ -1,0 +1,351 @@
+# On-watch date ordinals + low-battery label. Codegen: npm run codegen:ui
+# day_prefix: optional; prepended to each ordinal (omit for mixed-article langs like Italian).
+# Locale keys match num2words.h LANG_* IDs.
+
+version: 1
+
+x-ui-en: &ui-en
+  bat_low: "BAT!"
+  day_prefix: "the "
+  ordinals:
+    - first
+    - second
+    - third
+    - fourth
+    - fifth
+    - sixth
+    - seventh
+    - eighth
+    - ninth
+    - tenth
+    - eleventh
+    - twelfth
+    - thirteenth
+    - fourteenth
+    - fifteenth
+    - sixteenth
+    - seventeenth
+    - eighteenth
+    - nineteenth
+    - twentieth
+    - twenty-first
+    - twenty-second
+    - twenty-third
+    - twenty-fourth
+    - twenty-fifth
+    - twenty-sixth
+    - twenty-seventh
+    - twenty-eighth
+    - twenty-ninth
+    - thirtieth
+    - thirty-first
+
+x-ui-sv: &ui-sv
+  bat_low: "BAT!"
+  day_prefix: "den "
+  ordinals:
+    - första
+    - andra
+    - tredje
+    - fjärde
+    - femte
+    - sjätte
+    - sjunde
+    - åttonde
+    - nionde
+    - tionde
+    - elfte
+    - tolfte
+    - trettonde
+    - fjortonde
+    - femtonde
+    - sextonde
+    - sjuttonde
+    - artonde
+    - nittonde
+    - tjugonde
+    - tjugoförsta
+    - tjugoandra
+    - tjugotredje
+    - tjugofjärde
+    - tjugofemte
+    - tjugosjätte
+    - tjugosjunde
+    - tjugoåttonde
+    - tjugonionde
+    - trettionde
+    - trettioförsta
+
+x-ui-no: &ui-no
+  bat_low: "BAT!"
+  day_prefix: "den "
+  ordinals:
+    - første
+    - andre
+    - tredje
+    - fjerde
+    - femte
+    - sjette
+    - sjuende
+    - åttende
+    - niende
+    - tiende
+    - ellevte
+    - tolvte
+    - trettende
+    - fjortende
+    - femtende
+    - sekstende
+    - syttende
+    - attende
+    - nittende
+    - tjuende
+    - tjueførste
+    - tjueandre
+    - tjuetredje
+    - tjuefjerde
+    - tjuefemte
+    - tjuesekste
+    - tjuesjuende
+    - tjueåttende
+    - tjueniende
+    - trettiende
+    - trettiførste
+
+x-ui-nl: &ui-nl
+  bat_low: "BAT!"
+  day_prefix: "de "
+  ordinals:
+    - eerste
+    - tweede
+    - derde
+    - vierde
+    - vijfde
+    - zesde
+    - zevende
+    - achtste
+    - negende
+    - tiende
+    - elfde
+    - twaalfde
+    - dertiende
+    - veertiende
+    - vijftiende
+    - zestiende
+    - zeventiende
+    - achttiende
+    - negentiende
+    - twintigste
+    - eenentwintigste
+    - tweeëntwintigste
+    - drieëntwintigste
+    - vierentwintigste
+    - vijfentwintigste
+    - zesentwintigste
+    - zevenentwintigste
+    - achtentwintigste
+    - negenentwintigste
+    - dertigste
+    - eenendertigste
+
+x-ui-it: &ui-it
+  bat_low: "BAT!"
+  ordinals:
+    - il primo
+    - il secondo
+    - il terzo
+    - il quarto
+    - il quinto
+    - il sesto
+    - il settimo
+    - "l'ottavo"
+    - il nono
+    - il decimo
+    - "l'undicesimo"
+    - il dodicesimo
+    - il tredicesimo
+    - il quattordicesimo
+    - il quindicesimo
+    - il sedicesimo
+    - il diciasettesimo
+    - il diciottesimo
+    - il diciannovesimo
+    - il ventesimo
+    - il ventunesimo
+    - il ventiduesimo
+    - il ventitreesimo
+    - il ventiquattresimo
+    - il venticinquesimo
+    - il ventiseiesimo
+    - il ventisettesimo
+    - il ventottesimo
+    - il ventinovesimo
+    - il trentesimo
+    - il trentunesimo
+
+x-ui-es: &ui-es
+  bat_low: "¡BAT!"
+  day_prefix: "el "
+  ordinals:
+    - primero
+    - segundo
+    - tercero
+    - cuarto
+    - quinto
+    - sexto
+    - séptimo
+    - octavo
+    - noveno
+    - décimo
+    - undécimo
+    - duodécimo
+    - decimotercero
+    - decimocuarto
+    - decimoquinto
+    - decimosexto
+    - decimoséptimo
+    - decimoctavo
+    - decimonoveno
+    - vigésimo
+    - vigésimo primero
+    - vigésimo segundo
+    - vigésimo tercero
+    - vigésimo cuarto
+    - vigésimo quinto
+    - vigésimo sexto
+    - vigésimo séptimo
+    - vigésimo octavo
+    - vigésimo noveno
+    - trigésimo
+    - trigésimo primero
+
+x-ui-de: &ui-de
+  bat_low: "AKKU!"
+  day_prefix: "der "
+  ordinals:
+    - Erste
+    - Zweite
+    - Dritte
+    - Vierte
+    - Fünfte
+    - Sechste
+    - Siebte
+    - Achte
+    - Neunte
+    - Zehnte
+    - Elfte
+    - Zwölfte
+    - Dreizehnte
+    - Vierzehnte
+    - Fünfzehnte
+    - Sechzehnte
+    - Siebzehnte
+    - Achtzehnte
+    - Neunzehnte
+    - Zwanzigste
+    - Einundzwanzigste
+    - Zweiundzwanzigste
+    - Dreiundzwanzigste
+    - Vierundzwanzigste
+    - Fünfundzwanzigste
+    - Sechsundzwanzigste
+    - Siebenundzwanzigste
+    - Achtundzwanzigste
+    - Neunundzwanzigste
+    - Dreißigste
+    - Einunddreißigste
+
+x-ui-fr: &ui-fr
+  bat_low: "BAT!"
+  day_prefix: "le "
+  ordinals:
+    - premier
+    - deuxième
+    - troisième
+    - quatrième
+    - cinquième
+    - sixième
+    - septième
+    - huitième
+    - neuvième
+    - dixième
+    - onzième
+    - douzième
+    - treizième
+    - quatorzième
+    - quinzième
+    - seizième
+    - dix-septième
+    - dix-huitième
+    - dix-neuvième
+    - vingtième
+    - vingt-et-unième
+    - vingt-deuxième
+    - vingt-troisième
+    - vingt-quatrième
+    - vingt-cinquième
+    - vingt-sixième
+    - vingt-septième
+    - vingt-huitième
+    - vingt-neuvième
+    - trentième
+    - trente-et-unième
+
+x-ui-ja: &ui-ja
+  bat_low: "DENCHI!"
+  ordinals:
+    - tsuitachi
+    - futsuka
+    - mikka
+    - yokka
+    - itsuka
+    - muika
+    - nanoka
+    - youka
+    - kokonoka
+    - touka
+    - juuichi-nichi
+    - juuni-nichi
+    - juusan-nichi
+    - juuyokka
+    - juugo-nichi
+    - juuroku-nichi
+    - juushichi-nichi
+    - juuhachi-nichi
+    - juukyuu-nichi
+    - hatsuka
+    - nijuuichi-nichi
+    - nijuuni-nichi
+    - nijuusan-nichi
+    - nijuuyokka
+    - nijuugo-nichi
+    - nijuuroku-nichi
+    - nijuushichi-nichi
+    - nijuuhachi-nichi
+    - nijuukyuu-nichi
+    - sanjuu-nichi
+    - sanjuuichi-nichi
+
+locales:
+  "1":
+    <<: *ui-sv
+  "2":
+    <<: *ui-en
+  "3":
+    <<: *ui-no
+  "4":
+    <<: *ui-nl
+  "5":
+    <<: *ui-it
+  "6":
+    <<: *ui-es
+  "7":
+    <<: *ui-de
+  "8":
+    <<: *ui-de
+  "9":
+    <<: *ui-fr
+  "10":
+    <<: *ui-ja
+  "11":
+    <<: *ui-en

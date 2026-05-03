@@ -8,6 +8,7 @@
     "test:js": "node --test test/**/*.test.js",
     "test": "npm run test:js",
     "codegen:weather": "node scripts/codegen-weather.js",
+    "codegen:ui": "node scripts/codegen-ui.js",
     "emu:apply-config": "node scripts/emu-apply-config.js"
   },
   "dependencies": {

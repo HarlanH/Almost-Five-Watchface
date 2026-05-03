@@ -30,10 +30,8 @@ typedef struct {
 	const char* const phrases[12];
 	const char* const greetings[4];
 	const char* const connection_lost;
-	const char* const day_of_month_format;
 	const char* const meeting_now;
 	const char* const meeting_soon;
-	const char* const battery_status_format;
 	const int number_of_exceptions;
 	const Exception exceptions[];
 } Language;
@@ -55,4 +53,5 @@ void get_meeting_now_message(char* message, size_t length);
 
 void get_meeting_soon_message(char* message, size_t length);
 
-const char* get_battery_status_format(void);
+/** Low-battery status label (no digits); from strings/ui.yaml. */
+const char* get_battery_low_label(void);

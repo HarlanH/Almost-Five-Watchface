@@ -55,10 +55,8 @@ const Language LANG_FRENCH = {
     "Bonne nuit "
   },
   .connection_lost = "Où est ton télé- phone? ",
-  .day_of_month_format = "le %d",
   .meeting_now = "Réunion !",
   .meeting_soon = "Réunion Bientôt !",
-  .battery_status_format = "BAT %d%%",
 
   .number_of_exceptions = 2,
   .exceptions = {

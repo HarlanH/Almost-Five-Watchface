@@ -1,6 +1,6 @@
 # Unifying `lang-*.c` with YAML/codegen (future)
 
-**Status:** Not planned for now. Weather strings already use `strings/weather.yaml` → `npm run codegen:weather`. Fuzzy-time and related copy still live in hand-maintained `src/lang-*.c` + `num2words.c`.
+**Status:** Not planned for now. Weather uses `strings/weather.yaml` → `npm run codegen:weather`. **Date ordinals and `bat_low`** use `strings/ui.yaml` → `npm run codegen:ui`. Fuzzy-time phrases, hours, and exceptions still live in hand-maintained `src/lang-*.c` + `num2words.c`.
 
 This note captures tradeoffs if we revisit merging everything into one data-driven pipeline.
 
@@ -12,7 +12,7 @@ This note captures tradeoffs if we revisit merging everything into one data-driv
 
 ## What makes it harder than weather-only codegen
 
-- The **`Language` struct** is richer than weather: 12 hour words, 12 pentaminute phrases, 4 greetings, connection-lost, day-of-month format, meeting strings, and a **variable-length `exceptions` array** per locale.
+- The **`Language` struct** is richer than weather: 12 hour words, 12 pentaminute phrases, 4 greetings, connection-lost, meeting strings, and a **variable-length `exceptions` array** per locale. (Day-of-month and battery-low copy moved to `strings/ui.yaml`.)
 - **`SCREEN_WIDE` vs narrow** (e.g. English in `lang-english.c`): layout differs by platform. Codegen must emit **two phrase/greeting variants** per language, or encode layout-specific fields in YAML (e.g. `phrases_narrow` / `phrases_wide`).
 - **Reviewability**: Small per-language `.c` files are easy to diff today; generated C can be noisy unless **YAML is the only reviewed artifact**.
 - **Migration cost**: Touch `num2words.c`, all `lang-*` consumers, and verify **parity** (tests or golden outputs) so fuzzy time behavior does not drift.

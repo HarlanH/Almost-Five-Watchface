@@ -6,7 +6,9 @@ This is a Pebble/Rebble smartwatch watchface ("Almost Five") that shows fuzzy na
 
 Product direction: avoid raw digits in user-facing copy where practical (fuzzy time, weather line uses spelled-out temperature bands, not numeric °F/°C).
 
-Weather copy is **on-watch** from `strings/weather.yaml` via **`npm run codegen:weather`** (writes `src/generated/weather_i18n_gen.{h,c}`). PKJS sends Open-Meteo **`KEY_WEATHER_CODE`** + **`KEY_WEATHER_TEMP_F`** (°F only); the watch converts to °C for non-`LANG_EN` locales. Future tweaks and deferred ideas: `docs/weather-i18n-notes.md`. **Fuzzy-time `lang-*.c`:** optional YAML/codegen unification is deferred; see `docs/lang-codegen-future.md`.
+Weather copy is **on-watch** from `strings/weather.yaml` via **`npm run codegen:weather`** (writes `src/generated/weather_i18n_gen.{h,c}`). PKJS sends Open-Meteo **`KEY_WEATHER_CODE`** + **`KEY_WEATHER_TEMP_F`** (°F only); the watch converts to °C for non-`LANG_EN` locales. Future tweaks and deferred ideas: `docs/weather-i18n-notes.md`.
+
+**Date ordinals + low-battery label** come from `strings/ui.yaml` via **`npm run codegen:ui`** (`src/generated/ui_i18n_gen.{h,c}`). **Fuzzy-time phrases** remain in `lang-*.c`; optional full YAML migration is described in `docs/lang-codegen-future.md`.
 
 ### Services
 
@@ -14,6 +16,7 @@ Weather copy is **on-watch** from `strings/weather.yaml` via **`npm run codegen:
 |---|---|---|
 | JS tests | PKJS + emulator config tool unit tests | `npm test` |
 | Weather strings codegen | Regenerate C from `strings/weather.yaml` | `npm run codegen:weather` |
+| UI strings codegen | Regenerate C from `strings/ui.yaml` (ordinals, `bat_low`) | `npm run codegen:ui` |
 | Pebble build | Compile watchface for all target platforms | `pebble build` |
 | Pebble emulator | Run the watchface visually | `pebble install --emulator <platform>` (e.g. `basalt`, `flint`, `aplite`, `diorite`) |
 
@@ -27,6 +30,7 @@ Weather copy is **on-watch** from `strings/weather.yaml` via **`npm run codegen:
 - **Set emulator time:** `pebble emu-set-time HH:MM:SS --emulator basalt`
 - **Apply dev config:** `npm run emu:apply-config -- --emulator flint`
 - **Weather i18n codegen:** `npm run codegen:weather` (after editing `strings/weather.yaml`)
+- **UI i18n codegen:** `npm run codegen:ui` (after editing `strings/ui.yaml`)
 
 ### Gotchas
 

@@ -267,7 +267,7 @@ void update_status_indicators(void)
 	}
 
 	if (batteryPercent < 40) {
-		snprintf(batteryStatusText, sizeof(batteryStatusText), "BAT!");
+		snprintf(batteryStatusText, sizeof(batteryStatusText), "%s", get_battery_low_label());
 	} else {
 		batteryStatusText[0] = '\0';
 	}

@@ -1,4 +1,5 @@
 #include "num2words.h"
+#include "generated/ui_i18n_gen.h"
 #include "string.h"
 #include <stdio.h>
 
@@ -16,26 +17,6 @@
 
 static const Language* language = &LANG_ENGLISH;
 static uint8_t current_language_id = LANG_EN;
-
-static void get_english_day_of_month_ordinal(int day, char* message, size_t length) {
-  static const char *ordinals[] = {
-    "",
-    "the first", "the second", "the third", "the fourth", "the fifth",
-    "the sixth", "the seventh", "the eighth", "the ninth", "the tenth",
-    "the eleventh", "the twelfth", "the thirteenth", "the fourteenth", "the fifteenth",
-    "the sixteenth", "the seventeenth", "the eighteenth", "the nineteenth", "the twentieth",
-    "the twenty-first", "the twenty-second", "the twenty-third", "the twenty-fourth", "the twenty-fifth",
-    "the twenty-sixth", "the twenty-seventh", "the twenty-eighth", "the twenty-ninth", "the thirtieth",
-    "the thirty-first"
-  };
-
-  if (day < 1 || day > 31) {
-    message[0] = '\0';
-    return;
-  }
-
-  snprintf(message, length, "%s", ordinals[day]);
-}
 
 void set_language(uint8_t lang) {
   current_language_id = lang;
@@ -208,12 +189,7 @@ void get_day_of_month_message(int day, char* message, size_t length)
     return;
   }
 
-  if (language == &LANG_ENGLISH || language == &LANG_ENGLISH_UK) {
-    get_english_day_of_month_ordinal(day, message, length);
-    return;
-  }
-
-  snprintf(message, length, language->day_of_month_format, day);
+  ui_format_day_of_month(get_current_language_id(), day, message, length);
 }
 
 void get_meeting_now_message(char* message, size_t length)
@@ -226,7 +202,7 @@ void get_meeting_soon_message(char* message, size_t length)
   snprintf(message, length, "%s", language->meeting_soon);
 }
 
-const char* get_battery_status_format(void)
+const char* get_battery_low_label(void)
 {
-  return language->battery_status_format;
+  return ui_bat_low_for_lang(get_current_language_id());
 }

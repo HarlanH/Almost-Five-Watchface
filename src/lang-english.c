@@ -65,10 +65,8 @@ const Language LANG_ENGLISH = {
 #endif
 
   .connection_lost = "Where's your phone? ",
-  .day_of_month_format = "the %d",
   .meeting_now = "Meeting Now!",
   .meeting_soon = "Meeting Soon!",
-  .battery_status_format = "BAT %d%%",
 
   .number_of_exceptions = 0
 };

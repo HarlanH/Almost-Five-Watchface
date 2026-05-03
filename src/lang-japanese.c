@@ -55,10 +55,8 @@ const Language LANG_JAPANESE = {
     "Oyasumi "
   },
   .connection_lost = "Denwa wa doko? ",
-  .day_of_month_format = "%d nichi",
   .meeting_now = "Kaigi ima!",
   .meeting_soon = "Kaigi sugu!",
-  .battery_status_format = "BAT %d%%",
 
   .number_of_exceptions = 0
 };
