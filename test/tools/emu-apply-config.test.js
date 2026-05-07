@@ -26,7 +26,9 @@ test('toAppMessageDict maps yaml values to message keys', () => {
     message_time: 4,
     gesture: 2,
     bt_notification: 1,
-    strict_hour_phrases: false
+    strict_hour_phrases: false,
+    weather_code: 0,
+    weather_temp_f: 72
   });
 
   assert.deepEqual(dict, {
@@ -35,7 +37,9 @@ test('toAppMessageDict maps yaml values to message keys', () => {
     KEY_MESSAGE_TIME: 4,
     KEY_GESTURE: 2,
     KEY_BT_NOTIFICATION: 1,
-    KEY_STRICT_HOUR_PHRASES: 0
+    KEY_STRICT_HOUR_PHRASES: 0,
+    KEY_WEATHER_CODE: 0,
+    KEY_WEATHER_TEMP_F: 72
   });
 });
 

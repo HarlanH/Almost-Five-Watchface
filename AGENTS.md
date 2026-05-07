@@ -17,6 +17,7 @@ Weather copy is **on-watch** from `strings/weather.yaml` via **`npm run codegen:
 | JS tests | PKJS + emulator config tool unit tests | `npm test` |
 | Weather strings codegen | Regenerate C from `strings/weather.yaml` | `npm run codegen:weather` |
 | UI strings codegen | Regenerate C from `strings/ui.yaml` (ordinals, `bat_low`) | `npm run codegen:ui` |
+| Store screenshots | Regenerate `screenshots/*.png` for README (aplite uses Back to leave idle screen) | `pebble build` then `npm run screenshots:store` (first QEMU boot may sit in `_wait_for_qemu` several minutes; `PEBBLE_INSTALL_TIMEOUT=600` optional) |
 | Pebble build | Compile watchface for all target platforms | `pebble build` |
 | Pebble emulator | Run the watchface visually | `pebble install --emulator <platform>` (e.g. `basalt`, `flint`, `aplite`, `diorite`) |
 
@@ -34,6 +35,7 @@ Weather copy is **on-watch** from `strings/weather.yaml` via **`npm run codegen:
 
 ### Gotchas
 
+- **Emulator screenshots:** Diorite QEMU often fails `pebble screenshot` / `pebble repl` with `TimeoutError` on some machines; the repo’s `npm run screenshots:store` uses basalt for the diorite-named PNG (same 144×168 layout). Aplite may show the timeline idle screen until Back is pressed. See README → *Screenshot limitations*.
 - The `pebble` CLI emits Python `SyntaxWarning` lines about invalid escape sequences in `libpebble2`; these are harmless and do not affect functionality.
 - The ARM linker warns about `LOAD segment with RWX permissions` on every platform — this is expected and does not affect the watchface.
 - `emu-set-time` may not visually update the watchface display immediately if the emulator app was just installed; the fuzzy-time text updates on the next minute tick.

@@ -43,6 +43,8 @@ function toAppMessageDict(config) {
   if (config.gesture !== undefined) dict.KEY_GESTURE = toNumber(config.gesture, 'gesture');
   if (config.bt_notification !== undefined) dict.KEY_BT_NOTIFICATION = toNumber(config.bt_notification, 'bt_notification');
   if (config.strict_hour_phrases !== undefined) dict.KEY_STRICT_HOUR_PHRASES = boolToBinary(Boolean(config.strict_hour_phrases));
+  if (config.weather_code !== undefined) dict.KEY_WEATHER_CODE = toNumber(config.weather_code, 'weather_code');
+  if (config.weather_temp_f !== undefined) dict.KEY_WEATHER_TEMP_F = toNumber(config.weather_temp_f, 'weather_temp_f');
   if (config.inverse_colors !== undefined) dict.KEY_INVERSE = boolToBinary(Boolean(config.inverse_colors));
   if (config.background_color !== undefined) dict.KEY_BACKGROUND = hexColorToARGB2222(config.background_color, 'background_color');
   if (config.regular_color !== undefined) dict.KEY_REGULAR_TEXT = hexColorToARGB2222(config.regular_color, 'regular_color');

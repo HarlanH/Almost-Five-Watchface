@@ -1,5 +1,26 @@
 # Almost Five release notes
 
+## 1.2.0
+
+### Appstore text (short)
+
+- On-watch weather line from Open-Meteo: sky condition and spelled-out temperature bands (no raw °F/°C digits), localized per language.
+- Day-of-month is spelled out in words for every locale (YAML-driven), with low-battery status text localized too.
+- Top status row rotates meeting, Bluetooth, battery, and weather; optional gesture tap cycles the row on color platforms.
+
+### Detailed
+
+- **Weather:** PKJS fetches Open-Meteo; watch receives `KEY_WEATHER_CODE` + `KEY_WEATHER_TEMP_F` (always °F on the wire). Copy comes from `strings/weather.yaml` via `npm run codegen:weather` into `weather_i18n_gen.{h,c}`; non–US English locales use °C bands in prose.
+- **UI i18n:** `strings/ui.yaml` + `npm run codegen:ui` generate ordinals (1st–31st) and `bat_low` labels; `day_prefix` in YAML keeps aplite within flash limits.
+- **Layout / interaction:** Hybrid top-row phrase, splash/greeting behavior, and gesture paging updates as on the feature branch; see PR for full file list.
+- **Emulator tooling:** `dev-config.yml` / `npm run emu:apply-config` may include optional `weather_code` and `weather_temp_f` for reproducible screenshots without the JS weather fetch.
+
+### Screenshot automation status / remaining TODOs
+
+- Added `npm run screenshots:store` with scenario-driven configs under `screenshots/capture-config-*.yml`.
+- Aplite timeline-idle handling and screenshot retry/size guards are in place to reduce bad captures.
+- Remaining follow-ups: true hardware diorite capture option, stronger screenshot-content validation, and optional automation for non-store platforms.
+
 ## 1.1.0
 
 ### Appstore text (short)
@@ -23,4 +44,3 @@
 ## 1.0.0
 
 first release
-
