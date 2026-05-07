@@ -12,7 +12,8 @@ const {
   getCalendarUrls,
   millisUntilNextBoundary,
   mergeEventsIntoCache,
-  buildWeatherAppMessage
+  buildWeatherAppMessage,
+  buildWeatherRequestUrl
 } = require('../../src/js/pebble-js-app');
 
 test('buildConfigUrl returns embedded data URL', () => {
@@ -169,4 +170,16 @@ test('buildWeatherAppMessage maps Open-Meteo current to int tuples (°F)', () =>
   });
   assert.equal(buildWeatherAppMessage(null), null);
   assert.equal(buildWeatherAppMessage({}), null);
+});
+
+test('buildWeatherRequestUrl uses provided coordinates and has fallback', () => {
+  const brooklynUrl = buildWeatherRequestUrl({ latitude: 40.6782, longitude: -73.9442 });
+  assert.match(brooklynUrl, /latitude=40\.6782/);
+  assert.match(brooklynUrl, /longitude=-73\.9442/);
+  assert.match(brooklynUrl, /temperature_unit=fahrenheit/);
+  assert.match(brooklynUrl, /current=temperature_2m,weather_code/);
+
+  const fallbackUrl = buildWeatherRequestUrl();
+  assert.match(fallbackUrl, /latitude=37\.7749/);
+  assert.match(fallbackUrl, /longitude=-122\.4194/);
 });

@@ -6,6 +6,8 @@ var K_WEATHER_TEMP_F = typeof KEY_WEATHER_TEMP_F !== 'undefined' ? KEY_WEATHER_T
 var SETTINGS_STORAGE_KEY = 'almost_five_settings';
 var CALENDAR_POLL_INTERVAL_MS = 300000;
 var WEATHER_POLL_INTERVAL_MS = 1800000;
+var DEFAULT_WEATHER_LAT = 37.7749;
+var DEFAULT_WEATHER_LON = -122.4194;
 var MEETING_STATUS_NONE = 0;
 var MEETING_STATUS_SOON = 1;
 var MEETING_STATUS_NOW = 2;
@@ -387,32 +389,73 @@ function sendWeatherAppMessage(dict) {
   });
 }
 
-function refreshWeatherPhrase() {
-  var req = new XMLHttpRequest();
-  req.onload = function() {
-    if (req.status < 200 || req.status >= 300) {
-      console.log('Weather request failed with status ' + req.status);
-      sendWeatherAppMessage(null);
+function buildWeatherRequestUrl(coords) {
+  var latitude = DEFAULT_WEATHER_LAT;
+  var longitude = DEFAULT_WEATHER_LON;
+  if (coords && typeof coords.latitude === 'number' && typeof coords.longitude === 'number') {
+    latitude = coords.latitude;
+    longitude = coords.longitude;
+  }
+
+  return 'https://api.open-meteo.com/v1/forecast?latitude=' + encodeURIComponent(latitude) +
+    '&longitude=' + encodeURIComponent(longitude) +
+    '&current=temperature_2m,weather_code&temperature_unit=fahrenheit';
+}
+
+function getWeatherCoordinates(callback) {
+  if (typeof navigator === 'undefined' || !navigator.geolocation || !navigator.geolocation.getCurrentPosition) {
+    callback(null);
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(function(pos) {
+    if (!pos || !pos.coords) {
+      callback(null);
       return;
     }
+    callback({
+      latitude: pos.coords.latitude,
+      longitude: pos.coords.longitude
+    });
+  }, function(err) {
+    console.log('Weather geolocation unavailable: ' + JSON.stringify(err));
+    callback(null);
+  }, {
+    enableHighAccuracy: false,
+    timeout: 10000,
+    maximumAge: 15 * 60 * 1000
+  });
+}
 
-    try {
-      var payload = JSON.parse(req.responseText);
-      var msg = buildWeatherAppMessage(payload.current);
-      sendWeatherAppMessage(msg || null);
-    } catch (err) {
-      console.log('Weather parse failed: ' + err);
+function refreshWeatherPhrase() {
+  getWeatherCoordinates(function(coords) {
+    var url = buildWeatherRequestUrl(coords);
+    var req = new XMLHttpRequest();
+    req.onload = function() {
+      if (req.status < 200 || req.status >= 300) {
+        console.log('Weather request failed with status ' + req.status);
+        sendWeatherAppMessage(null);
+        return;
+      }
+
+      try {
+        var payload = JSON.parse(req.responseText);
+        var msg = buildWeatherAppMessage(payload.current);
+        sendWeatherAppMessage(msg || null);
+      } catch (err) {
+        console.log('Weather parse failed: ' + err);
+        sendWeatherAppMessage(null);
+      }
+    };
+
+    req.onerror = function() {
+      console.log('Weather request network error');
       sendWeatherAppMessage(null);
-    }
-  };
+    };
 
-  req.onerror = function() {
-    console.log('Weather request network error');
-    sendWeatherAppMessage(null);
-  };
-
-  req.open('GET', 'https://api.open-meteo.com/v1/forecast?latitude=37.7749&longitude=-122.4194&current=temperature_2m,weather_code&temperature_unit=fahrenheit', true);
-  req.send();
+    req.open('GET', url, true);
+    req.send();
+  });
 }
 
 function scheduleWeatherPolling() {
@@ -627,6 +670,7 @@ if (typeof module !== 'undefined' && module.exports) {
     getCalendarUrls: getCalendarUrls,
     millisUntilNextBoundary: millisUntilNextBoundary,
     mergeEventsIntoCache: mergeEventsIntoCache,
-    buildWeatherAppMessage: buildWeatherAppMessage
+    buildWeatherAppMessage: buildWeatherAppMessage,
+    buildWeatherRequestUrl: buildWeatherRequestUrl
   };
 }
